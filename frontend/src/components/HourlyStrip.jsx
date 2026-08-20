@@ -45,6 +45,7 @@ export default function HourlyStrip({ hours, units = 'metric' }) {
                 // The hourly series carries no is_day flag, so hours are drawn
                 // in their daytime form; the icon still conveys the condition.
                 isDay
+                temperature={hour.temperature}
                 size={26}
                 className="hourly__icon"
               />

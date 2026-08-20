@@ -57,6 +57,7 @@ export default function DailyForecast({ days, units = 'metric' }) {
                   group={day.condition_group}
                   intensity={day.condition_intensity}
                   isDay
+                  temperature={day.temp_max}
                   size={24}
                   label={day.condition || undefined}
                 />

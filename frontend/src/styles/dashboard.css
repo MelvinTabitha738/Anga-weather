@@ -492,3 +492,83 @@
     font-size: clamp(1.7rem, 8vh, 2.6rem);
   }
 }
+
+
+/* ===========================================================================
+   Weather icon motion
+   ---------------------------------------------------------------------------
+   Small and slow on purpose. The icons are already doing the descriptive work
+   through shading; motion is a hint of life, not the message. All of it stops
+   under prefers-reduced-motion (see index.css).
+   ======================================================================== */
+
+.wicon {
+  overflow: visible;
+}
+
+.wicon__rays {
+  transform-origin: 24px 22px;
+  animation: wicon-rotate 34s linear infinite;
+}
+
+.wicon[data-group='partly_cloudy'] .wicon__rays {
+  transform-origin: 30px 17px;
+}
+
+@keyframes wicon-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.wicon__rain path,
+.wicon__rain circle {
+  animation: wicon-fall 1.5s ease-in infinite;
+}
+
+.wicon[data-intensity='heavy'] .wicon__rain path {
+  animation-duration: 0.85s;
+}
+
+.wicon[data-intensity='moderate'] .wicon__rain path {
+  animation-duration: 1.15s;
+}
+
+@keyframes wicon-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+}
+
+/* Long dark gap, then two quick strikes - the rhythm of a real storm. */
+.wicon__bolt {
+  animation: wicon-flash 3.4s ease-out infinite;
+}
+
+@keyframes wicon-flash {
+  0%, 62%, 100% { opacity: 1; }
+  66% { opacity: 0.25; }
+  70% { opacity: 1; }
+  76% { opacity: 0.4; }
+  80% { opacity: 1; }
+}
+
+.wicon__fog rect {
+  animation: wicon-drift 5s ease-in-out infinite alternate;
+}
+
+.wicon__fog rect:nth-child(2) { animation-delay: -1.6s; }
+.wicon__fog rect:nth-child(3) { animation-delay: -3.2s; }
+
+@keyframes wicon-drift {
+  from { transform: translateX(-1.6px); }
+  to { transform: translateX(1.6px); }
+}

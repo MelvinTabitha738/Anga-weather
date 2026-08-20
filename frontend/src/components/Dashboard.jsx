@@ -64,6 +64,7 @@ export default function Dashboard({ data, onBack, onRefresh }) {
           group={current?.condition_group}
           intensity={current?.condition_intensity}
           isDay={current?.is_day !== false}
+          temperature={current?.temperature}
           size={104}
           className="current__icon"
         />
