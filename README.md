@@ -1098,8 +1098,15 @@ git push origin main
 
 ### Step 2 — Create the database on Neon
 
-Neon → **New Project** → name it `anga`, pick the region nearest your users
-(`aws-eu-central-1` is a reasonable choice for Kenya). No card required.
+Neon → **New Project** → name it `anga`. No card required.
+
+**Pick the region that matches Render's**, not the one nearest your users. The browser
+never talks to the database — it talks to Render, and Render talks to Neon. Since every
+request resolves a location against PostgreSQL, a region mismatch adds a cross-continent
+round trip to *every* request, cache hits included.
+
+`render.yaml` pins Render to **`oregon`**, so choose **AWS US West 2 (Oregon)** on Neon.
+If you move one, move the other.
 
 Copy the **connection string** from the dashboard. It looks like:
 

@@ -16,6 +16,13 @@ services:
     name: anga-api
     runtime: python
     plan: free
+    # Pinned rather than left to Render's default, because the database lives on
+    # Neon and every request resolves a location against it. What matters for
+    # latency is Render <-> Neon, not Neon <-> the user: the browser only ever
+    # talks to Render. Keep this region matching the Neon project's region;
+    # a mismatch adds a cross-continent round trip to EVERY request, cache hits
+    # included.
+    region: oregon
     rootDir: backend
     buildCommand: ./build.sh
     # Threads matter here: a request coalescing "follower" briefly blocks while
@@ -85,6 +92,9 @@ services:
   - type: keyvalue
     name: anga-cache
     plan: free
+    # Same region as the web service: a cache hit that crosses regions is not
+    # much of a cache.
+    region: oregon
     # No public access: only services in this Render account may connect.
     ipAllowList: []
     # The cache is a performance layer, not a source of truth. Evicting the
