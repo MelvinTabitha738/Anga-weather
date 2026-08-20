@@ -30,7 +30,7 @@ describe('production mount path', () => {
     )
 
     expect(container.innerHTML.length).toBeGreaterThan(0)
-    expect(await screen.findByRole('heading', { name: /weather for kenya/i })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: /anga/i })).toBeInTheDocument()
   })
 
   it('still renders when the backend is completely unreachable', async () => {
@@ -45,8 +45,10 @@ describe('production mount path', () => {
       </StrictMode>,
     )
 
-    expect(screen.getByRole('heading', { name: /weather for kenya/i })).toBeInTheDocument()
-    expect(screen.getByText('Anga')).toBeInTheDocument()
+    // "Anga" now appears in the wordmark, the logo's label and the heading, so
+    // assert on the heading specifically rather than the bare text.
+    expect(screen.getByRole('heading', { level: 1, name: /anga/i })).toBeInTheDocument()
+    expect(screen.getByText(/swahili for/i)).toBeInTheDocument()
   })
 
   it('still renders when a stale location is in localStorage and the backend is down', async () => {
@@ -80,6 +82,6 @@ describe('production mount path', () => {
         <App />
       </StrictMode>,
     )
-    expect(screen.getByRole('heading', { name: /weather for kenya/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: /anga/i })).toBeInTheDocument()
   })
 })

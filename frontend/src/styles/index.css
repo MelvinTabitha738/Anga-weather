@@ -106,7 +106,7 @@ body {
 
 .brand {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 0.6rem;
   min-width: 0;
   /* Doubles as "return to search", so it is a real button, reset to look
@@ -118,6 +118,19 @@ body {
   font: inherit;
   text-align: left;
   cursor: pointer;
+}
+
+.brand__logo {
+  flex: none;
+  border-radius: 9px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+}
+
+.brand__text {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  min-width: 0;
 }
 
 .brand__mark {
@@ -196,6 +209,53 @@ body {
 
 .search__clear:hover {
   color: var(--ink);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* A visible commit action. The input alone left people unsure whether Enter
+   had registered - especially on phones, where there is no obvious affordance. */
+.search__go {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.6rem;
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: 9px;
+  background: linear-gradient(180deg, #F0B45C 0%, #D9873A 100%);
+  color: #241505;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: filter 0.18s var(--ease), opacity 0.18s var(--ease);
+}
+
+.search__go:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.search__go:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.spinner {
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.suggestions__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .suggestions {
@@ -317,6 +377,136 @@ body {
   flex: none;
   margin-top: 0.1rem;
   opacity: 0.85;
+}
+
+/* --- Welcome ------------------------------------------------------------ */
+/* The first impression. Sized and spaced like a cover, not a form. */
+
+.welcome {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.35rem;
+  max-width: 40rem;
+  padding-block: clamp(1rem, 5vh, 3.5rem);
+}
+
+.welcome__mark {
+  display: flex;
+}
+
+.welcome__mark .logo {
+  border-radius: 17px;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.38);
+}
+
+.welcome__title {
+  font-family: var(--font-display);
+  font-size: clamp(3.6rem, 13vw, 6.5rem);
+  line-height: 0.94;
+  letter-spacing: -0.03em;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* The translation is the hook: it explains the name without a paragraph. */
+.welcome__meaning {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.welcome__meaning em {
+  font-style: italic;
+  color: #F3C98A;
+  text-transform: none;
+  letter-spacing: 0.04em;
+  font-size: 0.92rem;
+}
+
+.welcome__meaning-line {
+  width: 2.2rem;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(243, 201, 138, 0.9), transparent);
+  flex: none;
+}
+
+.welcome__lede {
+  margin: 0;
+  font-size: clamp(1rem, 2.6vw, 1.2rem);
+  line-height: 1.6;
+  color: var(--ink-muted);
+  max-width: 32rem;
+}
+
+.welcome__starters-label {
+  margin: 0 0 0.65rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.welcome__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip {
+  padding: 0.5rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: background 0.18s var(--ease), border-color 0.18s var(--ease),
+    transform 0.18s var(--ease);
+}
+
+.chip:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(243, 201, 138, 0.5);
+  transform: translateY(-1px);
+}
+
+.welcome__points {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  border-top: 1px solid var(--hairline);
+  padding-top: 1.25rem;
+}
+
+.welcome__points li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+  line-height: 1.45;
+}
+
+.welcome__point-icon {
+  flex: none;
+  margin-top: 0.1rem;
+  color: #F3C98A;
+  opacity: 0.9;
 }
 
 /* --- States ------------------------------------------------------------ */

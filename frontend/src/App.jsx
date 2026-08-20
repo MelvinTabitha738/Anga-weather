@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import Backdrop from './components/backdrop/Backdrop'
+import Logo from './components/Logo'
 import Dashboard from './components/Dashboard'
 import EmptyState from './components/EmptyState'
 import ErrorState from './components/ErrorState'
@@ -65,9 +66,17 @@ export default function App() {
 
       <div className="shell">
         <header className="masthead">
-          <button type="button" className="brand" onClick={clearSelection}>
-            <span className="brand__mark">Anga</span>
-            <span className="brand__tag">Weather for Kenya</span>
+          <button
+            type="button"
+            className="brand"
+            onClick={clearSelection}
+            aria-label="Anga — back to search"
+          >
+            <Logo size={30} className="brand__logo" />
+            <span className="brand__text">
+              <span className="brand__mark">Anga</span>
+              <span className="brand__tag">Weather for Kenya</span>
+            </span>
           </button>
           <SearchBar onSelect={choose} currentLabel={data?.location?.name} />
         </header>

@@ -135,14 +135,21 @@ const NIGHT_THEMES = {
   },
 }
 
-/** Neutral atmosphere used before any weather has loaded. */
+/**
+ * The sky before any weather has loaded.
+ *
+ * Deliberately not neutral. This is the first impression, and a flat grey-blue
+ * says nothing about where you are. An equatorial dawn - deep indigo overhead
+ * falling to amber at the horizon - is the light Kenya actually gets, and it
+ * gives the word "Anga" something to mean before a single number arrives.
+ */
 export const IDLE_THEME = {
   key: 'idle',
   group: 'unknown',
   intensity: 'none',
   isDay: true,
-  sky: ['#1B2A3C', '#2C3F55', '#41586F'],
-  glow: 'rgba(255, 255, 255, 0.10)',
+  sky: ['#14294A', '#3A5F87', '#C97F3F'],
+  glow: 'rgba(255, 196, 120, 0.34)',
   effect: EFFECT_NONE,
   rainDrops: 0,
   label: 'Anga',

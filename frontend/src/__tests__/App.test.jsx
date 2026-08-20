@@ -110,7 +110,7 @@ describe('first run', () => {
   it('invites a search and offers starting points', async () => {
     global.fetch = stubFetch()
     render(<App />)
-    expect(screen.getByRole('heading', { name: /weather for kenya/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: /anga/i })).toBeInTheDocument()
     expect(await screen.findByRole('button', { name: 'Kakamega' })).toBeInTheDocument()
   })
 
@@ -228,7 +228,7 @@ describe('dashboard', () => {
     await openDashboard()
 
     await userEvent.click(screen.getByRole('button', { name: /search locations/i }))
-    expect(await screen.findByRole('heading', { name: /weather for kenya/i })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: /anga/i })).toBeInTheDocument()
   })
 })
 
