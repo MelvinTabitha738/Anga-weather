@@ -1,37 +1,87 @@
 # Anga — Weather for Kenya
 
-**Anga** (Swahili for *sky*) shows current weather for Kenyan counties and towns.
+**Anga** (Swahili for *sky*) is a weather dashboard for Kenyan counties and towns:
+current conditions, an hourly outlook and a 7-day forecast, over a backdrop that reacts
+to the actual weather.
 
-The visible product is a calm, responsive weather page whose atmosphere reacts to the
-actual conditions. The engineering underneath it is the real subject: a Django service
-that sits between users and the [Weather-AI API](https://weather-ai.co/docs) and manages
-upstream consumption through **server-side caching, request coalescing, rate-limit
-awareness and graceful degradation**.
+The dashboard is the visible product. The engineering underneath it is the real subject —
+a Django service that sits between users and the
+[Weather-AI API](https://weather-ai.co/docs) and *manages* upstream consumption through
+**server-side caching, request coalescing, rate-limit awareness and graceful
+degradation**.
 
 The governing idea:
 
 > A user request does not have to become an upstream request.
 
+Two facts about the provider shaped everything else, both verified against the live API
+rather than assumed:
+
+1. **`/v1/weather` takes coordinates only** — there is no place-name lookup on the free
+   tier, so location search is served from our own Kenya gazetteer in PostgreSQL.
+2. **Rate limits are monthly, not per-second** — 1,000 requests/month on the free tier,
+   about 33 upstream calls *per day across every location combined*. A `429` here is not a
+   momentary backoff; it is a lockout lasting until the quota rolls over.
+
+---
+
+## Quick start
+
+Requires Python 3.11+ and Node 18+. PostgreSQL and Redis are optional locally — both have
+documented fallbacks.
+
+```bash
+# Backend  (http://localhost:8000)
+cd backend
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env                                # add your wai_ key
+python manage.py migrate
+python manage.py seed_locations                     # 99 Kenyan locations
+python manage.py runserver
+
+# Frontend (http://localhost:5173)
+cd frontend
+npm install
+npm run dev
+```
+
+No API key yet? `python tools/mock_weather_api.py --port 8787` implements the documented
+contract so you can develop without spending quota — see
+[Developing without spending quota](#developing-without-spending-quota).
+
+Full detail in [Local setup](#local-setup).
+
 ---
 
 ## Table of contents
 
+**Understanding the system**
 - [The problem](#the-problem)
 - [What the Weather-AI docs actually say](#what-the-weather-ai-docs-actually-say)
 - [Architecture](#architecture)
 - [Request flows](#request-flows)
+
+**The engineering**
 - [Caching strategy](#caching-strategy)
 - [Choosing the TTL](#choosing-the-ttl-the-arithmetic)
 - [Request coalescing](#request-coalescing)
 - [Rate-limit strategy](#rate-limit-strategy)
 - [Honest freshness](#honest-freshness)
+
+**The product**
+- [The interface](#the-interface)
 - [API reference](#api-reference)
 - [Security](#security)
+
+**Working on it**
 - [Tech stack and why](#tech-stack-and-why)
 - [Local setup](#local-setup)
 - [Environment variables](#environment-variables)
 - [Testing](#testing)
 - [Deployment](#deployment)
+
+**Honesty**
 - [Trade-offs](#trade-offs)
 - [Future improvements](#future-improvements)
 
@@ -56,8 +106,8 @@ That fails for three separate reasons, and the third is specific to this provide
 3. **It exhausts the quota almost immediately.** Weather-AI's rate limit is **monthly**,
    not per-second. The free tier is **1,000 requests per month** — roughly **33 upstream
    calls per day, across every location combined**. A naive implementation burns a month's
-   budget in an afternoon, and the resulting `429` does not clear in sixty seconds. It
-   clears at `X-RateLimit-Reset`, potentially **days** later.
+   budget in an afternoon, and the resulting `429` does not clear in sixty seconds - it
+   clears when the 30-day period rolls over, potentially **days** later.
 
 That third point reshapes the whole design. Against a per-second limit, you back off for a
 moment and retry. Against a monthly quota, being rate-limited is a **sustained outage you
@@ -102,14 +152,17 @@ major towns with coordinates and aliases — and why searching costs zero upstre
 **2. The sibling endpoints are not cheaper.** `/v1/forecast`, `/v1/current`, `/v1/daily`
 and `/v1/hourly` all *"delegate to the same handler as `/v1/weather`"* and return the same
 shape. There is no lighter "current conditions only" call, so `/v1/weather` is our single
-integration and `days=1` keeps the payload small.
+integration - and since the forecast rides along in that same response, we request the
+full `days=7`.
 
 **3. `ai=true` is the default and spends a second, much smaller quota** (200/month on
-free). Anga does not use the AI summary, so it sends **`ai=false`** on every call. The docs
-say this explicitly: *"Add `?ai=false` to skip Gemini AI summaries and preserve your AI
-quota."*
+free). The docs say so explicitly: *"Add `?ai=false` to skip Gemini AI summaries and
+preserve your AI quota."* Since `ai_summary` comes back `null` regardless (see below),
+Anga sends **`ai=false`** rather than spending that quota for nothing.
 
 ### Rate limiting
+
+The docs state every response carries:
 
 ```
 X-RateLimit-Limit:     1000        # monthly cap
@@ -117,8 +170,17 @@ X-RateLimit-Remaining: 987
 X-RateLimit-Reset:     1717977600  # unix epoch
 ```
 
-Limits reset on a **30-day rolling period from the subscription date**, not the calendar
-month. Documented plans: Free 1,000/mo (200 AI), Pro 50,000/mo, Scale 500,000/mo.
+**Verified against the live API: these headers do not exist.** Every header of several
+real `200` responses was inspected and none is present. `GET /v1/usage` works instead and
+returns the authoritative reading:
+
+```json
+{"plan": "free", "used": 3, "limit": 1000, "remaining": 997, "unlimited": false}
+```
+
+See [Rate-limit strategy](#rate-limit-strategy) for how quota is tracked without the
+headers. Limits reset on a **30-day rolling period from the subscription date**, not the
+calendar month. Documented plans: Free 1,000/mo (200 AI), Pro 50,000/mo, Scale 500,000/mo.
 
 ### Error codes
 
@@ -133,26 +195,62 @@ month. Documented plans: Free 1,000/mo (200 AI), Pro 50,000/mo, Scale 500,000/mo
 
 Error bodies use `{"error": "..."}`.
 
-### ⚠️ The one thing the docs do not specify
+### The response shape, verified
 
-**Weather-AI does not publish a response-body schema.** There is no OpenAPI document
+Weather-AI publishes **no response schema** - there is no OpenAPI document
 (`/openapi.json` 404s) and the docs show sample bodies only for `/v1/ip-lookup` and the
-tree-analysis endpoints. Since inventing field names would be worse than admitting the
-gap, every assumption about the upstream body is confined to a single module,
-[`backend/weather/adapter.py`](backend/weather/adapter.py), which maps each field from a
-list of candidate paths.
+tree-analysis endpoints. Rather than guess, the shape was captured from a real
+authenticated `GET /v1/weather?days=7&ai=true`. That capture is committed as
+[`backend/weather/tests/fixtures/live_weather_response.json`](backend/weather/tests/fixtures/live_weather_response.json)
+and the test suite asserts against it, so an upstream change fails loudly instead of
+silently producing nulls.
 
-To pin it down against a real key — one request, then the candidate lists collapse to the
-verified path each:
-
-```bash
-python manage.py probe_upstream --lat -1.2864 --lon 36.8172 --save raw.json
+```
+{ lat, lon, units, days,
+  current:  { time, interval, temperature, windspeed, winddirection, is_day, weathercode },
+  hourly:  [{ time, temp, precipitation, weathercode }]                      x48,
+  daily:   [{ date, temp_max, temp_min, precipitation, weathercode }]        x7,
+  ai_summary: null }
 ```
 
-It prints the raw body, the adapter's interpretation, any field that failed to resolve,
-and the observed quota. Nothing outside `adapter.py` needs to change afterwards.
+**What is available:** temperature, wind speed and direction, day/night, a WMO weather
+code, and full hourly (48h) and daily (7d) series with precipitation.
 
----
+**What is NOT available, and therefore is not displayed:**
+
+| Field | Status |
+| ----- | ------ |
+| Humidity | Not returned |
+| Feels-like | Not returned |
+| Pressure | Not returned |
+| Visibility | Not returned |
+| UV index | Not returned |
+| Sunrise / sunset | Not returned |
+| Condition text | Not returned - derived from `weathercode` |
+
+Anga shows what the provider actually returns. There are no placeholder cards and no
+invented values.
+
+**`ai_summary` is `null`** on a free-plan key even with `ai=true`, contradicting the docs'
+claim that summaries are included by default. It is passed through untouched, and the UI
+renders that section **only when it is non-null** - so the capability exists without
+fabricating prose. Because it is reliably null, `WEATHER_INCLUDE_AI` defaults to `false`
+rather than spending the separate 200/month AI quota for nothing.
+
+### Condition text from WMO codes
+
+`weathercode` is the **WMO 4677** present-weather scale (codes 0, 1, 2, 3, 51, 53 and 95
+all appeared in the captured response). Rendering code `51` as "Light drizzle" translates a
+documented standard rather than inventing data, and the same mapping drives both the
+wording and the animated backdrop. The table lives in
+[`weather/adapter.py`](backend/weather/adapter.py).
+
+### The forecast is free
+
+The hourly and daily series arrive **in the same response** as current conditions, so
+`days=7` costs exactly the same single request against the monthly quota as `days=1`.
+Anga therefore requests the free-plan maximum and renders the full forecast from data it
+was already caching.
 
 ## Architecture
 
@@ -374,7 +472,7 @@ which is exactly why they are configuration, not constants.
 
 ## Request coalescing
 
-### The problem
+### The failure mode
 
 Fifty users request an uncached Nairobi at the same instant. All fifty miss the cache. All
 fifty call Weather-AI. Forty-nine of those responses are identical and wasted — and on a
@@ -448,9 +546,54 @@ property with 25 real threads.
 
 **Principle: when upstream says we are rate limited, stop calling upstream.**
 
-Every response — success or failure — has its `X-RateLimit-Limit` / `-Remaining` / `-Reset`
-headers recorded. That is free information, so we never spend a request on `/v1/usage` just
-to learn our own quota.
+The documented `X-RateLimit-*` headers **do not exist on the live API**, so quota is
+tracked two ways, combined:
+
+1. **`GET /v1/usage`** is authoritative - `{plan, used, limit, remaining, unlimited}`. But
+   it costs a request itself, so polling it would consume the very budget it reports on.
+   Hourly polling would be 720 requests/month against a 1,000/month tier: absurd. It is
+   synced **at most once per `WEATHER_USAGE_TTL` (default 24h)** - about 30 requests a
+   month, 3% of the budget - and only piggybacked onto a cache miss that was already
+   calling upstream.
+
+   Critically, that interval is enforced by a **shared atomic claim**, not by a timestamp
+   check alone:
+
+   ```
+                          Redis
+                            │
+                   lock:upstream:usage   ← cache.add() = SET NX EX
+                            │
+              ┌─────────────┼─────────────┐
+           Worker A      Worker B      Worker C
+              └─────────────┼─────────────┘
+                            ↓
+                    exactly one winner
+                            ↓
+                       /v1/usage
+   ```
+
+   `usage_sync_due()` is a plain read, so it is a check-then-act race, and the request
+   coalescing lock does **not** cover it — that lock is keyed by location, so concurrent
+   leaders for Nairobi, Mombasa and Kisumu are three separate leaders arriving at the gate
+   together. Without the claim, a cold cache on a multi-worker deploy spends one request
+   per concurrent miss on a reading identical for all of them. A test asserts that 6
+   concurrent workers across 6 different locations produce exactly **1** `/v1/usage` call,
+   and that 50 threads contending on the claim produce exactly **1** winner.
+
+   The claim is held for `WEATHER_USAGE_LOCK_TTL` (1h), which doubles as the retry
+   backoff: a failed sync is not retried until it expires, so a broken endpoint costs at
+   most ~24 requests a day rather than one per cache miss. On success `synced_at` is
+   stamped, which keeps the gate shut for the full 24h regardless of when the claim
+   lapses.
+
+2. **Local counting** covers the gap. We are the only consumer of this key, so
+   `remaining_at_sync - calls_since_sync` is an accurate running estimate for free.
+
+The estimate is deliberately **conservative**: every attempt is counted, including failed
+ones, so `remaining` can only ever read lower than reality and the reserve triggers early
+rather than late. Header parsing is still attempted on every response - costless, and it
+picks the headers up automatically if the provider ever starts sending them.
 
 ```
                     ┌──────────────────────────────┐
@@ -459,25 +602,25 @@ to learn our own quota.
                                    │
         breaker open? ─────────────┼── yes ──▶ do NOT call. Serve stale, or 503.
                                    │
-        remaining ≤ reserve? ──────┼── yes ──▶ do NOT call. Preserve the budget.
+   estimated remaining ≤ reserve? ─┼── yes ──▶ do NOT call. Preserve the budget.
                                    │
                                    └── no ───▶ proceed
 ```
 
-- **On `429`:** record the headers, open the circuit breaker **until `X-RateLimit-Reset`**,
-  and serve cache exclusively until then. No retry — a retry cannot succeed against a
-  monthly quota, and would only burn budget.
-- **On `5xx` / timeout / connection failure:** a short backoff (`WEATHER_FAILURE_BACKOFF`,
-  60s) so a struggling upstream is not hammered. Short, because these are usually transient.
-- **Breaker duration is clamped** to `WEATHER_MAX_BREAKER_SECONDS` (24h), so a malformed or
-  absurd reset header cannot wedge the service indefinitely. Against a real 30-day reset
-  this means one probe request per day — about 30/month, an acceptable price for not being
-  permanently stuck on bad data.
-- **No retries anywhere.** `requests` is configured with `max_retries=0`; urllib3's implicit
-  retries are disabled deliberately. Backoff happens once, centrally, at the breaker.
+- **On `429`:** open the circuit breaker, force the stored `remaining` to zero, and serve
+  cache exclusively. No retry - a retry cannot succeed against a monthly quota and would
+  only burn budget. With no `X-RateLimit-Reset` to read, the backoff falls to
+  `WEATHER_DEFAULT_429_BACKOFF` (15 min), after which one probe request tests whether the
+  quota has rolled over.
+- **On `5xx` / timeout / connection failure:** a short backoff
+  (`WEATHER_FAILURE_BACKOFF`, 60s), because these are usually transient.
+- **Breaker duration is clamped** to `WEATHER_MAX_BREAKER_SECONDS` (24h) so a malformed
+  value cannot wedge the service indefinitely.
+- **No retries anywhere.** `requests` is configured with `max_retries=0`; urllib3's
+  implicit retries are disabled deliberately. Backoff happens once, centrally.
 
-Because the breaker lives in the shared cache, with Redis **all instances observe one 429
-and back off together** instead of each discovering it independently.
+Because the breaker and the quota estimate both live in the shared cache, with Redis **all
+instances observe one 429 and back off together**.
 
 ---
 
@@ -499,12 +642,13 @@ Stale data is never presented as current. Every response carries:
 }
 ```
 
-The UI reflects all three states in words, not only colour:
+The UI reflects every state in words, not only colour:
 
 | State | Indicator | Line under the reading |
 | ----- | --------- | ---------------------- |
-| Live | green dot | *Updated just now · live from Weather-AI* |
+| Live | green dot | *Updated just now · live* |
 | Cached | blue dot | *Updated 4 minutes ago · cached* |
+| Outlived the TTL | amber dot | *Updated 31 minutes ago · **may be out of date*** + Refresh |
 | Stale | amber dot | *Last updated 14 minutes ago · **not current*** |
 
 Stale readings additionally carry a notice above the temperature:
@@ -515,6 +659,127 @@ Age wording always **rounds down** to the completed unit, so freshness can never
 overstated. A cache hit is shown as a cache hit — being open about the ordinary case is
 what makes the stale warning credible when it appears.
 
+### The age keeps counting
+
+`age_seconds` is a snapshot taken when the server built the response. Left alone it
+freezes, so a tab open for an hour would keep insisting the reading is "just now" — the
+exact overstatement the rest of the design avoids. The frontend adds locally elapsed time
+on top of the server's figure, and the line ticks:
+
+```
+Updated just now · live   →   Updated 3 minutes ago   →   Updated 12 minutes ago
+```
+
+Elapsed time is measured from a local timestamp taken when the payload arrived, **not** by
+comparing `now` against `fetched_at`. Those are two different clocks: a device whose time
+is wrong by ten minutes would otherwise report a ten-minute error, or a negative age.
+Measuring a delta on a single clock is immune to skew.
+
+Once the displayed age passes `ttl_seconds` the reading is no longer what the server would
+call fresh, so it says so and offers a **Refresh**. There is deliberately no auto-refresh:
+that would silently spend quota the user did not ask for.
+
+---
+
+## The interface
+
+### Anatomy
+
+```
+  ← Search locations                        ● Updated 3 minutes ago
+  Kakamega
+  Thursday, 20 August
+
+      ☁      26°
+             Light drizzle
+
+  ┌──────────┬──────────────┬────────────┬──────────────┐
+  │ Wind     │ Rain this hr │ Rain today │ High / Low   │
+  │ 5 km/h   │ 0.1          │ 2.2        │ 26° / 15°    │
+  │ WNW      │              │            │              │
+  └──────────┴──────────────┴────────────┴──────────────┘
+
+  TODAY'S OUTLOOK                            💧 Rainfall (mm)
+  Now   4 PM   5 PM   6 PM   7 PM   8 PM  →  (scrolls)
+  26°   26°    25°    24°    23°    22°
+
+  NEXT 7 DAYS                                💧 Rainfall (mm)
+  Today      ☁    2.2    15° ▬▬▬▬▬▬ 26°
+  Tomorrow   ☁    0.4    14° ▬▬▬▬▬▬ 28°
+  Saturday   ☀     —     15° ▬▬▬▬▬▬ 28°
+```
+
+The forecast costs nothing extra: `hourly` and `daily` arrive in the same upstream
+response we were already caching.
+
+### Only what the provider returns
+
+Weather-AI returns no humidity, feels-like, pressure, visibility or UV index. Those cards
+therefore **do not exist** — there are no placeholder dashes and no invented values. The
+supporting row is built from what is genuinely available: wind, rainfall this hour,
+rainfall today, and today's high/low.
+
+Rainfall gets the same treatment in reverse. The API returns a figure for *every* day
+including `0.0`, so a dry day is a known value rather than missing data. Every row carries
+a value — a figure when it rains, an em dash when it does not — and the unit is stated
+once in a column legend instead of being repeated on each line.
+
+### Weather drives the visuals
+
+The backend classifies each WMO code into a small stable vocabulary
+(`condition_group` + `condition_intensity` + `is_day`). The frontend switches on that one
+contract, so no component re-interprets upstream values:
+
+| Condition | Treatment |
+| --------- | --------- |
+| Clear (day) | Warm sky, sun glow, slow breathing light |
+| Clear (night) | Deep sky, moon, fixed star field |
+| Partly cloudy | Softer sky, drifting cloud layers |
+| Overcast | Muted grey-blue, heavier cloud, lower contrast |
+| Fog | Low contrast, drifting fog layers, reduced depth |
+| Drizzle / Rain | Darkened sky, canvas rainfall |
+| Thunderstorm | Dark sky, heavy rain, occasional lightning |
+
+**Intensity is data-driven.** Rain density follows the reported intensity — and measured
+rainfall can *promote* it, so Kakamega's 12.6 mm thunderstorm animates harder than a
+0.1 mm trace. Adding a condition means editing one table, not hunting through JSX.
+
+Performance and comfort: one canvas and one `requestAnimationFrame` loop, delta-time
+integrated so speed is identical at 60Hz and 120Hz, paused when the tab is hidden, and
+fully disabled under `prefers-reduced-motion`. The weather is always stated in text, so
+the animation is decoration rather than information.
+
+### Responsive
+
+Breakpoints sit where the **layout** breaks, not at device names — 48rem, 34rem and
+22.5rem — plus `pointer: coarse` for touch targets (sized to the finger, not the screen)
+and a short-landscape query, because a phone on its side has ~360px of *height*.
+
+Verified by arithmetic across real device widths: **zero horizontal overflow from 320px to
+1920px**, with 87px of temperature bar still available on an iPhone SE.
+
+| Width | Device | Temperature bar |
+| ----- | ------ | --------------- |
+| 320px | iPhone SE | 87px |
+| 390px | iPhone 14/15 | 133px |
+| 768px | iPad portrait | 417px |
+| 1920px | Desktop | 1550px |
+
+Specific decisions: metrics go two-up on phones so all four numbers stay above the fold;
+the rain column stays on mobile because the legend promises it; in landscape the hero
+yields first, since height is the scarce resource. `viewport-fit=cover` is paired with
+`env(safe-area-inset-*)` so content clears the notch and home indicator, and the search
+input is held at 16px because iOS zooms the whole page on a smaller focused input.
+
+### Accessibility
+
+Text is a single near-white ramp over a fixed scrim, which keeps body copy above 4.5:1 on a
+bright noon sky and a midnight one alike. Search is a real ARIA combobox with arrow-key
+navigation; the freshness line is an `aria-live="polite"` region; every rainfall cell
+carries a spoken label (*"1.9 millimetres of rain"* / *"No rain expected"*) because the
+legend is not adjacent to the value; icons are `currentColor` SVG rather than emoji, which
+render inconsistently and cannot inherit colour.
+
 ---
 
 ## API reference
@@ -523,28 +788,50 @@ what makes the stale warning credible when it appears.
 
 ```json
 {
-  "location": { "slug": "nairobi", "name": "Nairobi", "county": "Nairobi",
-                "kind": "county", "label": "Nairobi" },
-  "weather": {
-    "temperature": 24.4, "feels_like": 25.2, "humidity": 62,
-    "wind_speed": 11.0, "wind_direction": "SE", "wind_direction_degrees": 130.0,
-    "precipitation": 0.0, "precipitation_chance": 12,
-    "pressure": 1014.0, "uv_index": 7.0,
-    "condition": "Partly cloudy",
-    "condition_group": "partly_cloudy", "condition_intensity": "none",
-    "is_day": true, "observed_at": "2026-08-20T09:00:00Z", "units": "metric"
+  "location": { "slug": "kakamega", "name": "Kakamega", "county": "Kakamega",
+                "kind": "county", "label": "Kakamega" },
+
+  "current": {
+    "temperature": 26.0, "wind_speed": 5.2,
+    "wind_direction": "WNW", "wind_direction_degrees": 292.0,
+    "precipitation_this_hour": 0.1, "weather_code": 51,
+    "condition": "Light drizzle",
+    "condition_group": "drizzle", "condition_intensity": "light",
+    "is_day": true, "observed_at": "2026-08-20T15:30", "units": "metric"
   },
+
+  "hourly": [
+    { "time": "2026-08-20T15:00", "temperature": 26.1, "precipitation": 0.1,
+      "weather_code": 51, "condition": "Light drizzle",
+      "condition_group": "drizzle", "condition_intensity": "light" }
+  ],
+
+  "daily": [
+    { "date": "2026-08-20", "temp_max": 26.3, "temp_min": 15.0,
+      "precipitation": 2.2, "weather_code": 51, "condition": "Light drizzle",
+      "condition_group": "drizzle", "condition_intensity": "light" }
+  ],
+
+  "ai_summary": null,
+
   "meta": { "status": "live", "is_cached": false, "is_stale": false, "…": "…" }
 }
 ```
 
-Every `weather` field is nullable; the UI omits what the API did not return rather than
-rendering an empty card.
+Sections are split by what they are, so the dashboard renders each independently. Every
+value is nullable and the UI omits what is null — see
+[the response shape](#the-response-shape-verified) for what this provider does and does
+not return.
 
-`condition_group` (`clear`, `partly_cloudy`, `cloudy`, `fog`, `drizzle`, `rain`,
-`thunderstorm`, `unknown`) and `condition_intensity` (`none`, `light`, `moderate`, `heavy`)
-are a **stable vocabulary the backend derives**, so the frontend switches its backdrop on one
-shared contract instead of re-interpreting upstream condition strings in each component.
+`condition_group` (`clear`, `partly_cloudy`, `cloudy`, `fog`, `drizzle`, `rain`, `snow`,
+`thunderstorm`, `unknown`) and `condition_intensity` (`none`, `light`, `moderate`,
+`heavy`) are a **stable vocabulary the backend derives from the WMO code**, so the
+frontend switches its backdrop and icons on one shared contract instead of
+re-interpreting upstream values in each component. Measured rainfall can promote — never
+demote — the intensity, which is what makes the rain animation track real rainfall.
+
+`hourly` starts at the hour in progress and is capped at 24 entries; `daily` carries the
+full 7 days.
 
 **Errors** — all share one shape, and the `code` is what the UI keys off:
 
@@ -743,11 +1030,11 @@ Full documentation with defaults is in [`backend/.env.example`](backend/.env.exa
 
 ## Testing
 
-**110 tests.** 75 backend, 35 frontend.
+**173 tests.** 98 backend, 75 frontend.
 
 ```bash
-cd backend && python manage.py test        # 75 tests
-cd frontend && npm test                    # 35 tests
+cd backend && python manage.py test        # 98 tests
+cd frontend && npm test                    # 75 tests
 ```
 
 Coverage is concentrated on the engineering behaviour rather than spread thin:
@@ -758,12 +1045,21 @@ collapsing case, whitespace, apostrophes and aliases onto one key; stale fallbac
 quota-reserve suspension; **coalescing with 25 real threads asserting exactly one upstream
 call**; followers degrading rather than retrying when the leader fails; per-location lock
 isolation; the full HTTP contract; throttling; adapter field mapping and condition
-classification; and the security assertions (hostile input rejection, no secret leakage).
+classification; **assertions against the captured live response** so an upstream shape
+change fails the suite; **the shared usage-sync claim** (6 concurrent workers across 6
+locations produce 1 `/v1/usage` call; 50 contending threads produce 1 winner); and the
+security assertions (hostile input rejection, no secret leakage).
 
-**Frontend** — loading skeleton, successful reading, cached labelling, stale warning with
-its explanation, each error state, retry recovery, mouse and keyboard search selection, the
-assertion that searching never triggers a weather request, omission of fields the API did
-not return, and backdrop selection from condition data.
+**Frontend** — the production mount path (inside `StrictMode`, with the backend
+unreachable, with corrupt `localStorage`); the dashboard (current conditions, metric row,
+hourly strip, multi-day forecast); cached labelling and the stale warning with its
+explanation; every error state and retry recovery; mouse and keyboard search selection;
+the assertion that searching never triggers a weather request; **the assertion that
+humidity / feels-like / pressure / visibility never appear**; the AI-insight section
+staying hidden while `ai_summary` is null; naive-local time rendering without timezone
+drift; backdrop selection from condition data; **the rainfall column never leaving a cell
+blank** (fixture built from real Meru data, four dry days); and **the freshness clock
+ticking** from "just now" to "3 minutes ago" and warning once it outlives the TTL.
 
 Notable bugs these caught during development: the typographic apostrophe `’` (what phone
 keyboards emit) being rejected by validation; CRLF passing input validation; and a derived
@@ -776,7 +1072,7 @@ than requests received.
 
 **Backend + PostgreSQL + Redis → Render** · **Frontend → Vercel**
 
-### Backend
+### Backend on Render
 
 1. Render → **New → Blueprint** → point at this repository. [`render.yaml`](render.yaml)
    provisions the web service, database and Key Value instance, and wires
@@ -788,7 +1084,7 @@ than requests received.
 
 `DJANGO_SECRET_KEY` is generated by Render; it never exists in the repository.
 
-### Frontend
+### Frontend on Vercel
 
 1. Vercel → **New Project** → set **Root Directory** to `frontend`.
 2. Set `VITE_API_BASE_URL` to the Render URL, e.g. `https://anga-api.onrender.com`.
@@ -837,13 +1133,19 @@ per-process and the cache dies on restart. It exists so local development needs 
 infrastructure, and the app logs a warning at startup so nobody deploys that way by
 accident.
 
-**The upstream response shape is not fully verified.** The single largest caveat, discussed
-[above](#️-the-one-thing-the-docs-do-not-specify). The risk is contained to one module with
-a one-command path to resolving it.
+**The provider returns less than the docs suggest.** No humidity, feels-like, pressure,
+visibility or UV index, and `ai_summary` is null on the free plan despite the docs. The
+dashboard is shaped by what genuinely exists rather than by what would look richer. If a
+paid plan returns more, `weather/adapter.py` is the only file that changes.
 
-**No forecast.** `/v1/weather` returns up to 7 days on the free tier and Anga shows only
-current conditions. Displaying a forecast would cost nothing extra upstream — the data is
-already in the response we cache — but it was out of scope for this build.
+**Quota tracking is an estimate between syncs.** The documented `X-RateLimit-*` headers do
+not exist, so `remaining` is `last /v1/usage reading - locally counted calls`. It is
+conservative by construction, but it would drift if another client used the same API key.
+A shorter `WEATHER_USAGE_TTL` trades quota for accuracy.
+
+**The AI insight section is built but dormant.** It renders only when `ai_summary` is
+non-null, which on this plan is never. That is deliberate — the alternative was inventing
+prose — but it means a visible feature of the design is currently invisible.
 
 ---
 
