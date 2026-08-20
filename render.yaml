@@ -1,8 +1,10 @@
 # Render blueprint for the Anga backend.
 #
-# Provisions three things: the Django service, PostgreSQL for the Kenya
-# gazetteer, and a Key Value (Redis) instance for the weather cache and the
-# single-flight locks.
+# Provisions the Django service and a Key Value (Redis) instance for the
+# weather cache and the single-flight locks.
+#
+# PostgreSQL is NOT provisioned here - it is hosted on Neon and supplied via
+# DATABASE_URL. See the README deployment section.
 #
 # Deploy: Render dashboard -> New -> Blueprint -> point at this repository.
 #
@@ -46,10 +48,15 @@ services:
       - key: VERCEL_PROJECT_SLUG
         sync: false
 
+      # PostgreSQL is hosted externally (Neon) rather than on Render, for two
+      # reasons: Render allows only one free-tier database per account, and a
+      # Render free database is DELETED after 90 days. Neon's free tier has no
+      # such expiry.
+      #
+      # Paste Neon's connection string here in the dashboard. It already ends
+      # with ?sslmode=require, which is what settings.py expects in production.
       - key: DATABASE_URL
-        fromDatabase:
-          name: anga-db
-          property: connectionString
+        sync: false
 
       - key: REDIS_URL
         fromService:
@@ -84,9 +91,3 @@ services:
     # least-recently-used key under pressure is correct here - losing a cached
     # reading costs one upstream request, and locks are short-lived anyway.
     maxmemoryPolicy: allkeys-lru
-
-databases:
-  - name: anga-db
-    plan: free
-    databaseName: anga
-    user: anga
