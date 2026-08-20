@@ -744,6 +744,37 @@ contract, so no component re-interprets upstream values:
 rainfall can *promote* it, so Kakamega's 12.6 mm thunderstorm animates harder than a
 0.1 mm trace. Adding a condition means editing one table, not hunting through JSX.
 
+### Weather imagery
+
+Icons are rendered rather than drawn: radial and linear gradients with a consistent light
+direction, soft shadow under each cloud form, translucent rain, a glowing sun corona. Line
+art reads as a diagram; shading reads as weather.
+
+**Temperature drives the light.** The sun's palette and glow are selected from the actual
+temperature across five bands, so a cool Nyahururu morning renders a pale thin sun and a
+hot Garissa afternoon a heavy amber one — same condition code, different heat. A
+photograph of a sun would be the same sun at 12°C and 34°C.
+
+SVG rather than an icon pack or photographs: sharp at any size, inherits the page's light,
+no network request, no licensing, and — the deciding factor — it can be driven by data.
+
+Blur filters are the expensive part and a dashboard renders roughly 31 icons at once
+(24 hourly + 7 daily), so filters are applied only above 48px. Below that the gradients
+carry it, which is visually near-identical at that scale and far cheaper. Gradient ids are
+generated per instance with `useId`; duplicates would make every icon inherit the first
+one's palette.
+
+### Identity
+
+The mark is a sun low over a horizon under an open sky — the sky itself rather than a
+weather symbol, since a cloud or a thermometer would tie the brand to one condition while
+the product shows all of them. It is built to survive being small: the sun and horizon
+separate at 20px because they differ in value, not only in hue.
+
+The landing view leads with the word and its meaning ("Anga — Swahili for *sky*") over a
+warm equatorial dawn, because the first impression has to make the name mean something
+before a single number arrives. A neutral grey-blue said nothing about where you are.
+
 Performance and comfort: one canvas and one `requestAnimationFrame` loop, delta-time
 integrated so speed is identical at 60Hz and 120Hz, paused when the tab is hidden, and
 fully disabled under `prefers-reduced-motion`. The weather is always stated in text, so
@@ -770,6 +801,22 @@ the rain column stays on mobile because the legend promises it; in landscape the
 yields first, since height is the scarce resource. `viewport-fit=cover` is paired with
 `env(safe-area-inset-*)` so content clears the notch and home indicator, and the search
 input is held at 16px because iOS zooms the whole page on a smaller focused input.
+
+### Search
+
+Suggestions are debounced and served from PostgreSQL, so typing costs no upstream quota.
+
+The subtle part is what happens on Enter. Because suggestions lag the keystrokes, the
+visible results may still belong to an earlier query at the moment Enter is pressed —
+acting on them selects the wrong town and makes the box feel like it needs several presses
+before it takes. So the hook reports **which query the current results belong to**, and
+Enter only trusts the list when that matches what is typed. Otherwise it submits the raw
+text and lets the backend resolve it, which it can, because normalisation and alias lookup
+are server-side. The first Enter is always correct.
+
+A visible **Search** button sits alongside, because an input with no commit affordance
+leaves people unsure whether their keypress registered — particularly on phones. Clear
+appears only when there is something to clear.
 
 ### Accessibility
 
@@ -1030,11 +1077,11 @@ Full documentation with defaults is in [`backend/.env.example`](backend/.env.exa
 
 ## Testing
 
-**173 tests.** 98 backend, 75 frontend.
+**189 tests.** 98 backend, 91 frontend.
 
 ```bash
 cd backend && python manage.py test        # 98 tests
-cd frontend && npm test                    # 75 tests
+cd frontend && npm test                    # 91 tests
 ```
 
 Coverage is concentrated on the engineering behaviour rather than spread thin:
@@ -1058,8 +1105,11 @@ the assertion that searching never triggers a weather request; **the assertion t
 humidity / feels-like / pressure / visibility never appear**; the AI-insight section
 staying hidden while `ai_summary` is null; naive-local time rendering without timezone
 drift; backdrop selection from condition data; **the rainfall column never leaving a cell
-blank** (fixture built from real Meru data, four dry days); and **the freshness clock
-ticking** from "just now" to "3 minutes ago" and warning once it outlives the TTL.
+blank** (fixture built from real Meru data, four dry days); **the freshness clock ticking**
+from "just now" to "3 minutes ago" and warning once it outlives the TTL; **search never
+acting on stale suggestions** (the regression that made Enter appear to need several
+presses); and **the sun's palette tracking temperature**, including the null case that
+would otherwise render a missing reading as freezing.
 
 Notable bugs these caught during development: the typographic apostrophe `’` (what phone
 keyboards emit) being rejected by validation; CRLF passing input validation; and a derived
@@ -1298,9 +1348,16 @@ Deliberately **not** implemented, to keep the scope honest:
 - **Async views**, removing the blocking follower wait entirely.
 - **A real metrics backend** (Prometheus/StatsD) instead of cache counters, with alerting on
   quota exhaustion before it happens.
-- **A forecast view**, using the forecast days already present in the cached response.
 - **Automated load testing** in CI to assert the coalescing property under sustained load
   rather than in a single test run.
+- **Live weather on the landing page.** Tempting and currently refused: six cities would be
+  six upstream calls every 30 minutes, roughly 288 a day against a budget of 33. It only
+  becomes affordable on a paid plan, or with a background refresher warming a fixed set.
+- **Sunrise and sunset**, if the provider ever returns them. `is_day` is currently the only
+  daylight signal, so the backdrop switches between day and night without knowing when the
+  boundary actually falls.
+- **A Kiswahili interface.** `lang=sw` exists but only translates the AI summary, which is
+  null on this plan. Translating the interface itself is a separate, larger piece of work.
 - **A distributed lock with fencing tokens** (Redlock-style) if this ever ran at a scale
   where the current lock's failure modes mattered.
 
