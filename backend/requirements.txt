@@ -20,5 +20,5 @@ python-dotenv>=1.0,<2
 gunicorn>=22.0,<24
 whitenoise>=6.7,<7
 
-# --- Tests ---
-responses>=0.25,<1
+# Test-only dependencies live in requirements-dev.txt so they are not installed
+# into the production image.

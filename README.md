@@ -34,7 +34,7 @@ documented fallbacks.
 # Backend  (http://localhost:8000)
 cd backend
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt                 # or requirements.txt for prod only
 cp .env.example .env                                # add your wai_ key
 python manage.py migrate
 python manage.py seed_locations                     # 99 Kenyan locations

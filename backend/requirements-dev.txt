@@ -1,0 +1,7 @@
+# Development and test dependencies.
+# Production installs requirements.txt only - see build.sh.
+-r requirements.txt
+
+# HTTP mocking. Not currently imported (the suite uses unittest.mock and a
+# FakeClient), kept for when a test needs to assert on the wire format.
+responses>=0.25,<1

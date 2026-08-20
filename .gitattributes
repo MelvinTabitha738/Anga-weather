@@ -1,0 +1,16 @@
+# Normalise line endings in the repository.
+* text=auto
+
+# These MUST stay LF. Render runs build.sh on Linux; a CRLF shebang line makes
+# the kernel look for an interpreter called "/usr/bin/env bash\r", which fails
+# with a confusing "no such file or directory". Committing from Windows without
+# this rule is the usual way that happens.
+*.sh text eol=lf
+*.py text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+# Binary-ish assets git should not try to convert.
+*.png binary
+*.jpg binary
+*.ico binary
