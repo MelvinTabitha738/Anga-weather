@@ -360,7 +360,7 @@ describe('freshness honesty', () => {
     })
     render(<App />)
     await openDashboard()
-    expect(screen.getByText(/updated 4 minutes ago · cached/i)).toBeInTheDocument()
+    expect(screen.getByText(/updated 4 minutes ago/i)).toBeInTheDocument()
   })
 
   it('warns clearly when data is stale and explains why', async () => {
@@ -381,15 +381,40 @@ describe('freshness honesty', () => {
     expect(screen.getByText(/not current/i)).toBeInTheDocument()
   })
 
-  it('does not describe stale data as live', async () => {
+  it('never shows implementation vocabulary to the reader', async () => {
+    // "cached" answers a question nobody asked. The age is the whole message;
+    // provenance is our concern, and lives in /api/meta/stats/ instead.
     global.fetch = stubFetch({
       weather: weatherResponse({
-        meta: { status: 'stale', is_cached: true, is_stale: true, age_seconds: 900 },
+        meta: { status: 'cached', is_cached: true, age_seconds: 240 },
+      }),
+    })
+    const { container } = render(<App />)
+    await openDashboard()
+
+    expect(screen.getByText(/updated 4 minutes ago/i)).toBeInTheDocument()
+
+    // Scoped to the freshness line. The footer explains the caching in prose,
+    // which is a fair place for it; the reading's own label is not.
+    const freshness = container.querySelector('.freshness')
+    expect(freshness.textContent).toMatch(/updated 4 minutes ago/i)
+    expect(freshness.textContent).not.toMatch(/cache/i)
+    expect(freshness.textContent).not.toMatch(/live/i)
+    expect(freshness.textContent).not.toMatch(/redis|upstream|stale/i)
+  })
+
+  it('still spends words where they change what to believe', async () => {
+    global.fetch = stubFetch({
+      weather: weatherResponse({
+        meta: {
+          status: 'stale', is_cached: true, is_stale: true,
+          age_seconds: 900, fallback_reason: 'upstream_unavailable',
+        },
       }),
     })
     render(<App />)
     await openDashboard()
-    expect(screen.queryByText(/· live$/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/not current/i)).toBeInTheDocument()
   })
 })
 

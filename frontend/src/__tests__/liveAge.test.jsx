@@ -51,7 +51,7 @@ afterEach(() => {
 describe('freshness ticks in real time', () => {
   it('starts at "just now" for a fresh live reading', () => {
     render(<Dashboard data={withMeta()} onBack={() => {}} />)
-    expect(screen.getByText(/updated just now · live/i)).toBeInTheDocument()
+    expect(screen.getByText(/updated just now/i)).toBeInTheDocument()
   })
 
   it('reaches "3 minutes ago" after three minutes on screen', async () => {
@@ -65,10 +65,10 @@ describe('freshness ticks in real time', () => {
   it('adds elapsed time on top of the age the server reported', async () => {
     // Server said the cached entry was already 4 minutes old.
     render(<Dashboard data={withMeta({ status: 'cached', is_cached: true, age_seconds: 240 })} onBack={() => {}} />)
-    expect(screen.getByText(/updated 4 minutes ago · cached/i)).toBeInTheDocument()
+    expect(screen.getByText(/updated 4 minutes ago/i)).toBeInTheDocument()
 
     await advance(120)
-    expect(screen.getByText(/updated 6 minutes ago · cached/i)).toBeInTheDocument()
+    expect(screen.getByText(/updated 6 minutes ago/i)).toBeInTheDocument()
   })
 
   it('keeps counting a stale reading too', async () => {
@@ -117,7 +117,7 @@ describe('freshness ticks in real time', () => {
         onBack={() => {}}
       />,
     )
-    expect(screen.getByText(/updated just now · live/i)).toBeInTheDocument()
+    expect(screen.getByText(/updated just now/i)).toBeInTheDocument()
   })
 
   it('is announced politely rather than interrupting', () => {

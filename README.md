@@ -642,22 +642,33 @@ Stale data is never presented as current. Every response carries:
 }
 ```
 
-The UI reflects every state in words, not only colour:
+The UI spends words only where they change what the reader should **believe**:
 
 | State | Indicator | Line under the reading |
 | ----- | --------- | ---------------------- |
-| Live | green dot | *Updated just now · live* |
-| Cached | blue dot | *Updated 4 minutes ago · cached* |
+| Live | green dot | *Updated just now* |
+| Cached | blue dot | *Updated 4 minutes ago* |
 | Outlived the TTL | amber dot | *Updated 31 minutes ago · **may be out of date*** + Refresh |
 | Stale | amber dot | *Last updated 14 minutes ago · **not current*** |
+
+Note what the first two deliberately do **not** say: whether the response came from cache
+or from upstream. That is implementation vocabulary. The reader has one question — *how
+old is this?* — and the age answers it completely; whether the bytes came from Redis is
+our concern, not theirs, and labelling the ordinary case "cached" only implies something
+second-rate. It would also contradict a rule applied everywhere else here, that internals
+never reach the interface.
+
+The provenance is still available: on hover as a `title`, and in full at
+`/api/meta/stats/`. The caching story belongs in the metrics and in this document, not in
+the product chrome.
 
 Stale readings additionally carry a notice above the temperature:
 
 > *Live updates are paused — showing the last reading we saved from 14 minutes ago.*
 
 Age wording always **rounds down** to the completed unit, so freshness can never be
-overstated. A cache hit is shown as a cache hit — being open about the ordinary case is
-what makes the stale warning credible when it appears.
+overstated. And because the ordinary states stay quiet, the two that do carry a warning
+are worth reading when they appear.
 
 ### The age keeps counting
 
@@ -1077,11 +1088,11 @@ Full documentation with defaults is in [`backend/.env.example`](backend/.env.exa
 
 ## Testing
 
-**189 tests.** 98 backend, 91 frontend.
+**190 tests.** 98 backend, 92 frontend.
 
 ```bash
 cd backend && python manage.py test        # 98 tests
-cd frontend && npm test                    # 91 tests
+cd frontend && npm test                    # 92 tests
 ```
 
 Coverage is concentrated on the engineering behaviour rather than spread thin:

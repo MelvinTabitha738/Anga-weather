@@ -115,18 +115,21 @@ export default function Dashboard({ data, onBack, onRefresh }) {
 }
 
 /**
- * One honest line about where this reading came from and how old it is.
+ * One honest line about how old this reading is.
  *
- * The age ticks while the page stays open (see useLiveAge) rather than
- * freezing at whatever the server reported when the response was built. A tab
- * left open must not keep insisting the reading is "just now".
+ * Note what it deliberately does NOT say: whether the response came from cache
+ * or from upstream. That is implementation vocabulary - the reader has exactly
+ * one question, "how old is this?", and the age answers it completely. Whether
+ * the bytes came from Redis is our concern, not theirs, and labelling the
+ * ordinary case "cached" only suggests something second-rate. The caching story
+ * belongs in /api/meta/stats/ and the README, not in the product chrome.
  *
- * Once the displayed age passes the cache TTL, the data on screen is no longer
- * what the server would call fresh, so the indicator says so and offers a
- * refresh instead of quietly continuing to look current.
+ * Words are spent only where they change what the reader should BELIEVE: past
+ * the TTL, and stale. Those are actionable; provenance is not.
  *
- * A cache hit is shown as a cache hit - being open about the ordinary case is
- * what makes the stale warning credible when it appears.
+ * The age ticks while the page stays open (see useLiveAge) rather than freezing
+ * at whatever the server reported when the response was built. A tab left open
+ * must not keep insisting the reading is "just now".
  */
 function Freshness({ meta, onRefresh }) {
   const liveAge = useLiveAge(meta)
@@ -138,23 +141,29 @@ function Freshness({ meta, onRefresh }) {
   let dotClass = 'freshness__dot'
   let text
 
+  // `detail` is the technical provenance, kept out of the visible text but
+  // available on hover for anyone who actually wants it.
+  let detail
+
   if (meta.is_stale) {
     dotClass += ' freshness__dot--stale'
     text = `Last updated ${age} · not current`
+    detail = 'Upstream could not be reached; showing the last saved reading'
   } else if (outgrewTtl) {
     dotClass += ' freshness__dot--stale'
     text = `Updated ${age} · may be out of date`
+    detail = 'Older than the cache lifetime — refresh for a current reading'
   } else if (meta.is_cached) {
     dotClass += ' freshness__dot--cached'
-    text = `Updated ${age} · cached`
+    text = `Updated ${age}`
+    detail = 'Served from the server-side cache'
   } else {
-    // A live fetch stops being "live" the moment it stops being new; after the
-    // first minute the age alone is the honest description.
-    text = age === 'just now' ? 'Updated just now · live' : `Updated ${age}`
+    text = age === 'just now' ? 'Updated just now' : `Updated ${age}`
+    detail = 'Fetched from Weather-AI for this request'
   }
 
   return (
-    <p className="freshness" aria-live="polite">
+    <p className="freshness" aria-live="polite" title={detail}>
       <span className={dotClass} aria-hidden="true" />
       <span>{text}</span>
       {outgrewTtl && onRefresh && (
