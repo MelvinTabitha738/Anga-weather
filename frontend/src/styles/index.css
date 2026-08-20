@@ -324,20 +324,72 @@ body {
   min-width: 0;
 }
 
+/* The status dot.
+ *
+ * It has to read at a glance on any sky, so it does three things rather than
+ * relying on fill alone: a bright core, a coloured halo that separates it from
+ * a light background, and a dark ring that separates it from a light one. Then
+ * a slow pulse to draw the eye - a pulse rather than a flicker, because a
+ * flashing element is a genuine accessibility hazard and reads as an error
+ * rather than a status.
+ */
 .freshness__dot {
-  width: 7px;
-  height: 7px;
+  position: relative;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  background: #6fd28a;
   flex: none;
+  background: var(--dot-colour, #6fd28a);
+  /* Inner dark ring, then the coloured glow: legible on light and dark alike. */
+  box-shadow:
+    0 0 0 1px rgba(6, 10, 16, 0.45),
+    0 0 8px 1px var(--dot-glow, rgba(111, 210, 138, 0.85));
+}
+
+/* The pulse: an expanding ring, so the dot itself never moves or dims. */
+.freshness__dot::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 1.5px solid var(--dot-colour, #6fd28a);
+  animation: dot-pulse var(--dot-tempo, 2.6s) ease-out infinite;
+}
+
+@keyframes dot-pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.85;
+  }
+  70% {
+    transform: scale(2.3);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.3);
+    opacity: 0;
+  }
 }
 
 .freshness__dot--cached {
-  background: #7fb2e5;
+  --dot-colour: #7fb2e5;
+  --dot-glow: rgba(127, 178, 229, 0.85);
 }
 
+/* A warning, so it pulses noticeably faster than the healthy states. */
 .freshness__dot--stale {
-  background: #e8b862;
+  --dot-colour: #f0b94e;
+  --dot-glow: rgba(240, 185, 78, 0.95);
+  --dot-tempo: 1.4s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .freshness__dot::after {
+    animation: none;
+    /* Keep a static ring so the emphasis survives without motion. */
+    opacity: 0.55;
+    transform: scale(1.5);
+  }
 }
 
 /* Only appears once the reading has outlived the cache TTL, so it is an

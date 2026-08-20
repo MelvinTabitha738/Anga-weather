@@ -10,10 +10,20 @@
  * from here. Adding a new condition means editing one table, not hunting
  * through JSX.
  *
- * Contrast note: every sky is paired with a dark scrim (see backdrop.css) and
- * text is always near-white. That keeps body text comfortably above 4.5:1 on
- * bright midday skies as well as night ones, instead of leaving contrast to
- * chance per palette.
+ * CONTRAST IS COMPUTED, NOT ASSUMED
+ * ---------------------------------
+ * Text is always near-white over a dark scrim. A FIXED scrim does not work:
+ * an audit of every sky found 20 WCAG failures, all on bright daytime
+ * palettes, because the scrim was thinnest exactly where the sky was
+ * brightest - primary text over the fog sky measured 3.63:1 against a 4.5
+ * requirement.
+ *
+ * So the scrim is now solved per sky. For each gradient stop we find the
+ * lightest scrim that still carries the whole text ramp past WCAG AA, and emit
+ * it as a CSS variable. A darker sky gets a thinner veil and keeps its depth;
+ * a bright one gets whatever it needs. Legibility stops depending on which way
+ * the weather went, and a new palette added later is covered automatically
+ * rather than silently failing.
  */
 
 export const EFFECT_NONE = 'none'
@@ -186,6 +196,83 @@ export function resolveTheme(weather) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Adaptive scrim
+// ---------------------------------------------------------------------------
+
+/** The scrim colour, matching backdrop.css. */
+const SCRIM_RGB = [6, 10, 16]
+
+/**
+ * The text ramp from index.css, as white at these alphas, paired with the WCAG
+ * ratio each must clear. `--ink-faint` is only ever used at large or secondary
+ * sizes, so it targets the 3:1 large-text threshold.
+ */
+const INK_REQUIREMENTS = [
+  { alpha: 0.97, ratio: 4.5 },
+  { alpha: 0.72, ratio: 4.5 },
+  { alpha: 0.52, ratio: 3.0 },
+]
+
+/** Never fully transparent (the sky would swallow text) nor a black box. */
+const SCRIM_MIN = 0.16
+const SCRIM_MAX = 0.74
+
+function hexToRgb(hex) {
+  const clean = String(hex).replace('#', '')
+  return [0, 2, 4].map((i) => parseInt(clean.slice(i, i + 2), 16))
+}
+
+function channelToLinear(value) {
+  const c = value / 255
+  return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+}
+
+function luminance([r, g, b]) {
+  return (
+    0.2126 * channelToLinear(r) + 0.7152 * channelToLinear(g) + 0.0722 * channelToLinear(b)
+  )
+}
+
+function compositeOver(foreground, alpha, background) {
+  return foreground.map((c, i) => c * alpha + background[i] * (1 - alpha))
+}
+
+function contrastRatio(a, b) {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+  return (hi + 0.05) / (lo + 0.05)
+}
+
+const scrimCache = new Map()
+
+/**
+ * The lightest scrim alpha over `skyHex` that still carries the whole text
+ * ramp past WCAG AA. Stepped rather than solved analytically because the
+ * relationship is not monotonic in a useful closed form, and 0.02 steps over a
+ * bounded range are exact enough and instant.
+ */
+export function scrimAlphaFor(skyHex) {
+  if (scrimCache.has(skyHex)) return scrimCache.get(skyHex)
+
+  const sky = hexToRgb(skyHex)
+  let chosen = SCRIM_MAX
+
+  for (let alpha = SCRIM_MIN; alpha <= SCRIM_MAX + 1e-9; alpha += 0.02) {
+    const background = compositeOver(SCRIM_RGB, alpha, sky)
+    const passes = INK_REQUIREMENTS.every(({ alpha: inkAlpha, ratio }) => {
+      const text = compositeOver([255, 255, 255], inkAlpha, background)
+      return contrastRatio(text, background) >= ratio
+    })
+    if (passes) {
+      chosen = Math.round(alpha * 100) / 100
+      break
+    }
+  }
+
+  scrimCache.set(skyHex, chosen)
+  return chosen
+}
+
 /** CSS custom properties consumed by backdrop.css and the layout. */
 export function themeToCssVars(theme) {
   return {
@@ -193,5 +280,9 @@ export function themeToCssVars(theme) {
     '--sky-mid': theme.sky[1],
     '--sky-bottom': theme.sky[2],
     '--sky-glow': theme.glow,
+    // Solved per sky so legibility never depends on the weather.
+    '--scrim-top': scrimAlphaFor(theme.sky[0]),
+    '--scrim-mid': scrimAlphaFor(theme.sky[1]),
+    '--scrim-bottom': scrimAlphaFor(theme.sky[2]),
   }
 }

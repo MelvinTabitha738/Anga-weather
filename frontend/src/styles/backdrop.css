@@ -42,14 +42,17 @@
 }
 
 .backdrop__scrim {
-  /* Fixed dark wash. This is what lets one near-white text ramp stay legible
-     on a bright noon sky and a midnight one alike. */
+  /* Alphas are solved per sky in lib/weatherTheme.js - the lightest veil that
+     still carries the whole text ramp past WCAG AA. A fixed scrim failed on
+     bright daytime palettes, where it was thinnest exactly where the sky was
+     brightest. Fallbacks cover the first paint before React sets the vars. */
   background: linear-gradient(
     to bottom,
-    rgba(6, 10, 16, 0.42) 0%,
-    rgba(6, 10, 16, 0.2) 38%,
-    rgba(6, 10, 16, 0.5) 100%
+    rgba(6, 10, 16, var(--scrim-top, 0.45)) 0%,
+    rgba(6, 10, 16, var(--scrim-mid, 0.4)) 45%,
+    rgba(6, 10, 16, var(--scrim-bottom, 0.55)) 100%
   );
+  transition: background 900ms ease;
 }
 
 /* --- Sun ---------------------------------------------------------------- */

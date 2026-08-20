@@ -831,8 +831,25 @@ appears only when there is something to clear.
 
 ### Accessibility
 
-Text is a single near-white ramp over a fixed scrim, which keeps body copy above 4.5:1 on a
-bright noon sky and a midnight one alike. Search is a real ARIA combobox with arrow-key
+Text is a single near-white ramp over a scrim that is **solved per sky**. A fixed scrim did
+not work, and asserting that it did was wrong: an audit of every palette found **20 WCAG
+failures**, all on bright daytime skies, because the veil was thinnest exactly where the
+sky was brightest — primary text over the fog sky measured **3.63:1** against a 4.5
+requirement.
+
+For each gradient stop, `scrimAlphaFor()` finds the lightest scrim that still carries the
+whole text ramp past AA. A midnight sky keeps its depth with a thin veil; a noon sky gets
+whatever it needs. Legibility no longer depends on which way the weather went, and a
+palette added later is covered automatically rather than silently failing.
+
+A test recomputes the real contrast for every theme × every stop × every step of the ramp,
+so this cannot regress.
+
+The status dot beside the reading is built the same way: a bright core, a coloured halo to
+separate it from a dark background and a dark ring to separate it from a light one, plus a
+slow expanding pulse — a pulse rather than a flicker, since flashing elements are an
+accessibility hazard and read as an error rather than a status. The stale state pulses
+faster, because it is a warning. Search is a real ARIA combobox with arrow-key
 navigation; the freshness line is an `aria-live="polite"` region; every rainfall cell
 carries a spoken label (*"1.9 millimetres of rain"* / *"No rain expected"*) because the
 legend is not adjacent to the value; icons are `currentColor` SVG rather than emoji, which
@@ -1088,11 +1105,11 @@ Full documentation with defaults is in [`backend/.env.example`](backend/.env.exa
 
 ## Testing
 
-**190 tests.** 98 backend, 92 frontend.
+**211 tests.** 98 backend, 113 frontend.
 
 ```bash
 cd backend && python manage.py test        # 98 tests
-cd frontend && npm test                    # 92 tests
+cd frontend && npm test                    # 113 tests
 ```
 
 Coverage is concentrated on the engineering behaviour rather than spread thin:
