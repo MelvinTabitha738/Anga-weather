@@ -1,10 +1,10 @@
 /* ===========================================================================
    Anga - base, tokens and layout
 
-   Design intent: an editorial weather page, not a dashboard. One reading at a
-   time, set large and confidently, over a sky that reflects the actual
-   conditions. Chrome is kept to hairlines and space rather than cards and
-   borders, so the weather itself is the interface.
+   Design intent: an editorial weather dashboard. One clear focal reading set
+   large and confidently, supporting numbers kept quiet beneath it, over a sky
+   that reflects the actual conditions. Chrome is hairlines and space rather
+   than boxed cards, so the weather itself remains the interface.
    ======================================================================== */
 
 *,
@@ -19,6 +19,11 @@ body,
   height: 100%;
 }
 
+html {
+  /* Stops iOS inflating text when a phone is rotated to landscape. */
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   background: #10171f;
@@ -26,6 +31,10 @@ body {
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Safety net: wide content (the hourly strip, long place names) scrolls
+     inside its own container, so the page itself never should. */
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 :root {
@@ -46,6 +55,7 @@ body {
   --radius-sm: 10px;
 
   --shell-max: 62rem;
+  --gutter: clamp(1.1rem, 4vw, 2.5rem);
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
@@ -66,11 +76,21 @@ body {
   width: 100%;
   max-width: var(--shell-max);
   margin: 0 auto;
-  padding: clamp(1.25rem, 4vw, 2.5rem);
   display: flex;
   flex-direction: column;
   flex: 1;
   gap: clamp(1.5rem, 5vh, 3rem);
+  min-width: 0;
+
+  /* index.html sets viewport-fit=cover so the backdrop reaches the screen
+     edges on notched phones. That means the CONTENT has to keep itself clear
+     of the notch, the rounded corners and the home indicator - hence the
+     max() against each safe-area inset. The 0px fallbacks keep this valid on
+     browsers without env(). */
+  padding-top: max(var(--gutter), env(safe-area-inset-top, 0px));
+  padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+  padding-bottom: max(var(--gutter), env(safe-area-inset-bottom, 0px));
+  padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
 }
 
 /* --- Masthead ---------------------------------------------------------- */
@@ -79,8 +99,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1.5rem;
+  gap: 1rem 1.5rem;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .brand {
@@ -88,6 +109,15 @@ body {
   align-items: baseline;
   gap: 0.6rem;
   min-width: 0;
+  /* Doubles as "return to search", so it is a real button, reset to look
+     like the wordmark it is. */
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
 .brand__mark {
@@ -144,7 +174,9 @@ body {
   outline: none;
   color: var(--ink);
   font: inherit;
-  font-size: 0.95rem;
+  /* Must stay at 16px: iOS Safari zooms the entire page when a focused input
+     is smaller, which then leaves the layout scrolled sideways. */
+  font-size: 1rem;
 }
 
 .search input::placeholder {
@@ -180,8 +212,9 @@ body {
   border-radius: var(--radius);
   backdrop-filter: blur(18px);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
-  max-height: 17rem;
+  max-height: min(17rem, 50vh);
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .suggestions__item {
@@ -218,98 +251,6 @@ body {
   color: var(--ink-faint);
 }
 
-/* --- Reading ----------------------------------------------------------- */
-
-.reading {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: clamp(1.25rem, 3vh, 2rem);
-  padding-block: clamp(1rem, 4vh, 3rem);
-}
-
-.reading__place {
-  font-family: var(--font-display);
-  font-size: clamp(2.4rem, 7vw, 4.2rem);
-  line-height: 1.02;
-  letter-spacing: -0.015em;
-  margin: 0;
-}
-
-.reading__county {
-  display: block;
-  font-family: var(--font-ui);
-  font-size: 0.8rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  margin-bottom: 0.85rem;
-}
-
-.reading__temperature {
-  display: flex;
-  align-items: flex-start;
-  gap: 1.25rem;
-  flex-wrap: wrap;
-}
-
-.reading__degrees {
-  font-family: var(--font-display);
-  font-size: clamp(5rem, 19vw, 9.5rem);
-  line-height: 0.85;
-  letter-spacing: -0.045em;
-  font-variant-numeric: tabular-nums;
-  margin: 0;
-}
-
-.reading__condition {
-  align-self: flex-end;
-  padding-bottom: 0.6rem;
-  font-size: clamp(1rem, 2.4vw, 1.3rem);
-  color: var(--ink-muted);
-  letter-spacing: -0.005em;
-}
-
-/* --- Detail row -------------------------------------------------------- */
-
-.details {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
-  gap: 1px;
-  background: var(--hairline);
-  border-block: 1px solid var(--hairline);
-}
-
-.details__item {
-  background: transparent;
-  padding: 1rem 1.1rem 1rem 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  /* The 1px grid gap shows the hairline through; this repaints the cell so
-     only the separators remain visible. */
-  box-shadow: 0 0 0 100vmax transparent;
-}
-
-.details__label {
-  font-size: 0.72rem;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-
-.details__value {
-  font-size: clamp(1.15rem, 2.6vw, 1.5rem);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.015em;
-}
-
-.details__hint {
-  font-size: 0.78rem;
-  color: var(--ink-faint);
-}
-
 /* --- Freshness --------------------------------------------------------- */
 
 .freshness {
@@ -318,6 +259,9 @@ body {
   gap: 0.55rem;
   font-size: 0.85rem;
   color: var(--ink-muted);
+  margin: 0;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .freshness__dot {
@@ -334,6 +278,25 @@ body {
 
 .freshness__dot--stale {
   background: #e8b862;
+}
+
+/* Only appears once the reading has outlived the cache TTL, so it is an
+   answer to a problem the user can already see, not idle chrome. */
+.freshness__refresh {
+  margin-left: 0.15rem;
+  padding: 0.15rem 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.18s var(--ease);
+}
+
+.freshness__refresh:hover {
+  background: var(--surface-strong);
 }
 
 .notice {
@@ -406,6 +369,17 @@ body {
   border-color: rgba(255, 255, 255, 0.34);
 }
 
+.button--quiet {
+  background: none;
+  border-color: transparent;
+  color: var(--ink-muted);
+}
+
+.button--quiet:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+
 /* Skeleton: shapes that match the real reading, so the page does not jump
    when data arrives. */
 .skeleton {
@@ -451,6 +425,11 @@ body {
 .skeleton__bar--cell {
   height: 3rem;
   border-radius: 10px;
+}
+
+.skeleton__bar--panel {
+  height: 6rem;
+  border-radius: 12px;
 }
 
 @keyframes shimmer {
@@ -505,17 +484,21 @@ body {
   border-radius: 6px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-  }
-}
+/* ===========================================================================
+   Responsive
+   ---------------------------------------------------------------------------
+   Breakpoints sit where the LAYOUT breaks, not at device names:
 
-@media (max-width: 40rem) {
+     48rem (768px)    masthead can no longer fit brand and search on one line
+     34rem (544px)    phone portrait
+     22.5rem (360px)  small phones (iPhone SE, Galaxy A0x)
+
+   Plus two capability queries: pointer:coarse for touch-target sizing, and a
+   short-landscape query, because a phone on its side has ~360px of height.
+   ======================================================================== */
+
+/* --- Large phones and small tablets ------------------------------------- */
+@media (max-width: 48rem) {
   .masthead {
     align-items: stretch;
   }
@@ -523,9 +506,117 @@ body {
   .search {
     margin-left: 0;
     max-width: none;
+    flex-basis: 100%;
+  }
+}
+
+/* --- Phones ------------------------------------------------------------- */
+@media (max-width: 34rem) {
+  .shell {
+    gap: 1.5rem;
   }
 
-  .details__item {
-    padding-right: 0.75rem;
+  .brand__mark {
+    font-size: 1.4rem;
+  }
+
+  .brand__tag {
+    font-size: 0.68rem;
+  }
+
+  .state {
+    padding-block: 1.5rem;
+  }
+
+  .state__actions {
+    gap: 0.5rem;
+  }
+
+  /* Full-width action buttons read better than a ragged wrapped row. */
+  .state__actions .button {
+    flex: 1 1 100%;
+  }
+
+  .colophon {
+    gap: 0.5rem;
+    font-size: 0.72rem;
+  }
+}
+
+/* --- Small phones ------------------------------------------------------- */
+@media (max-width: 22.5rem) {
+  .brand__tag {
+    /* At 320px the wordmark alone carries the branding. */
+    display: none;
+  }
+
+  .suggestions__meta {
+    display: none;
+  }
+}
+
+/* --- Touch devices ------------------------------------------------------ */
+/* Pointer-based sizing rather than width-based: a 44px target is about the
+   finger, not the screen. */
+@media (pointer: coarse) {
+  .suggestions__item {
+    padding-block: 0.75rem;
+    min-height: 44px;
+  }
+
+  .button {
+    padding: 0.75rem 1.15rem;
+    min-height: 44px;
+  }
+
+  .search__field {
+    padding-block: 0.8rem;
+  }
+
+  .search__clear {
+    padding: 0.5rem;
+    margin-right: -0.25rem;
+  }
+
+  .linkback {
+    padding-block: 0.6rem;
+    min-height: 44px;
+  }
+}
+
+/* --- Landscape phones --------------------------------------------------- */
+/* Height, not width, is the scarce resource here. */
+@media (max-height: 30rem) and (orientation: landscape) {
+  .shell {
+    gap: 1rem;
+  }
+
+  .state {
+    padding-block: 0.5rem;
+  }
+
+  .state__title {
+    font-size: 1.6rem;
+  }
+}
+
+/* --- Very large screens ------------------------------------------------- */
+@media (min-width: 100rem) {
+  :root {
+    /* Slightly wider measure so the page does not look marooned on a large
+       monitor, while keeping line lengths readable. */
+    --shell-max: 68rem;
+  }
+}
+
+/* --- Accessibility ------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
 }

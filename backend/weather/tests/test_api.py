@@ -28,14 +28,15 @@ class WeatherEndpointTests(WeatherTestCase):
         self.assertEqual(body["location"]["slug"], "nairobi")
         self.assertEqual(body["location"]["label"], "Nairobi")
 
-        weather = body["weather"]
-        self.assertEqual(weather["temperature"], 24.5)
-        self.assertEqual(weather["humidity"], 62)
-        self.assertEqual(weather["condition"], "Partly cloudy")
-        # The shared vocabulary the frontend switches its background on.
-        self.assertEqual(weather["condition_group"], "partly_cloudy")
-        self.assertIn("condition_intensity", weather)
-        self.assertIs(weather["is_day"], True)
+        current = body["current"]
+        self.assertEqual(current["temperature"], 24.5)
+        self.assertEqual(current["wind_speed"], 11.2)
+        self.assertEqual(current["wind_direction"], "SE")
+        self.assertEqual(current["condition"], "Partly cloudy")
+        # The shared vocabulary the frontend switches its backdrop on.
+        self.assertEqual(current["condition_group"], "partly_cloudy")
+        self.assertIn("condition_intensity", current)
+        self.assertIs(current["is_day"], True)
 
         meta = body["meta"]
         self.assertEqual(meta["status"], "live")
@@ -44,6 +45,42 @@ class WeatherEndpointTests(WeatherTestCase):
         self.assertIsNotNone(meta["fetched_at"])
         self.assertIsNone(meta["fallback_reason"])
         self.assertEqual(meta["ttl_seconds"], 1800)
+
+    def test_response_never_contains_fields_upstream_does_not_return(self):
+        """Humidity, feels-like, pressure and visibility are simply not in the
+        Weather-AI response, so they must not appear in ours."""
+        fake = FakeClient()
+        with mock.patch("weather.service.get_client", return_value=fake):
+            body = self._get(location="Nairobi").json()
+
+        for absent in ("humidity", "feels_like", "pressure", "visibility", "uv_index"):
+            self.assertNotIn(absent, body["current"])
+
+    def test_forecast_is_included_in_the_same_response(self):
+        """The forecast rides along in the cached upstream response, so it
+        costs no extra quota."""
+        fake = FakeClient()
+        with mock.patch("weather.service.get_client", return_value=fake):
+            body = self._get(location="Nairobi").json()
+
+        self.assertEqual(fake.calls, 1, "forecast must not need a second call")
+
+        self.assertTrue(body["hourly"])
+        first_hour = body["hourly"][0]
+        for key in ("time", "temperature", "precipitation", "condition_group"):
+            self.assertIn(key, first_hour)
+
+        self.assertTrue(body["daily"])
+        first_day = body["daily"][0]
+        for key in ("date", "temp_max", "temp_min", "condition_group"):
+            self.assertIn(key, first_day)
+
+    def test_ai_summary_is_present_as_a_key_but_null(self):
+        fake = FakeClient()
+        with mock.patch("weather.service.get_client", return_value=fake):
+            body = self._get(location="Nairobi").json()
+        self.assertIn("ai_summary", body)
+        self.assertIsNone(body["ai_summary"])
 
     def test_second_request_is_served_from_cache(self):
         fake = FakeClient()

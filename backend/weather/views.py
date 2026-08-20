@@ -152,10 +152,22 @@ class StatsView(APIView):
                     "quota_reserve": settings.WEATHER_QUOTA_RESERVE,
                 },
                 "upstream_quota": {
+                    "plan": quota_state.get("plan"),
                     "limit": quota_state.get("limit"),
-                    "remaining": quota_state.get("remaining"),
-                    "reset_at": quota_state.get("reset_at"),
-                    "observed_at": quota_state.get("observed_at"),
+                    # Reading from the last /v1/usage sync...
+                    "remaining_at_sync": quota_state.get("remaining"),
+                    # ...minus what we have spent since, which is what the
+                    # reserve actually gates on.
+                    "calls_since_sync": quota_state.get("calls_since_sync"),
+                    "estimated_remaining": quota_state.get("estimated_remaining"),
+                    "synced_at": quota_state.get("synced_at"),
+                    "source": quota_state.get("source"),
+                },
+                # The shared claim that stops every worker syncing at once.
+                "usage_sync": {
+                    "due": quota.usage_sync_due(),
+                    "claim_held": quota.get_usage_sync_lock_state() is not None,
+                    "interval_seconds": settings.WEATHER_USAGE_TTL,
                 },
                 "breaker": {
                     "open": breaker is not None,

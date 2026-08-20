@@ -26,6 +26,7 @@ COUNTERS = (
     "coalesce_follower_served",
     "coalesce_follower_timeout",
     "upstream_request",
+    "usage_synced",
     "upstream_success",
     "upstream_rate_limited",
     "upstream_unavailable",

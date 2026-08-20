@@ -3,6 +3,10 @@
 The frontend never sees Weather-AI's raw JSON. It sees this contract, which is
 stable regardless of upstream changes and always carries honest freshness
 metadata alongside the data.
+
+Sections are split by what they are, so a dashboard can render each
+independently: where, now, the next hours, the next days, any prose, and how
+much to trust the freshness.
 """
 
 from datetime import datetime, timezone
@@ -19,23 +23,46 @@ def _iso(epoch: float | None) -> str | None:
     return datetime.fromtimestamp(float(epoch), tz=timezone.utc).isoformat()
 
 
-class WeatherResponseSerializer(serializers.Serializer):
-    """Serialises a service.WeatherResult.
+# Keys of the payload that belong to "current conditions" rather than forecast.
+_CURRENT_FIELDS = (
+    "temperature",
+    "wind_speed",
+    "wind_direction",
+    "wind_direction_degrees",
+    "precipitation_this_hour",
+    "weather_code",
+    "condition",
+    "condition_group",
+    "condition_intensity",
+    "is_day",
+    "observed_at",
+    "units",
+)
 
-    Three top-level sections keep concerns separate: what place this is, what
-    the weather is, and how much to trust its freshness.
-    """
+
+class WeatherResponseSerializer(serializers.Serializer):
+    """Serialises a service.WeatherResult."""
 
     def to_representation(self, result):
+        payload = result.payload or {}
+
         return {
             "location": LocationSerializer(result.location).data,
-            "weather": result.payload,
+            # Present-moment conditions.
+            "current": {key: payload.get(key) for key in _CURRENT_FIELDS},
+            # Forecast, which arrived in the same cached upstream response and
+            # therefore cost no additional quota.
+            "hourly": payload.get("hourly") or [],
+            "daily": payload.get("daily") or [],
+            # Passed through from upstream untouched. Null on the free plan, in
+            # which case the UI renders no insight section at all.
+            "ai_summary": payload.get("ai_summary"),
             "meta": {
                 # "live" | "cached" | "stale"
                 "status": result.status,
                 "is_cached": result.is_cached,
                 "is_stale": result.is_stale,
-                # When Weather-AI actually observed/returned this data.
+                # When Weather-AI actually returned this data.
                 "fetched_at": _iso(result.fetched_at),
                 "age_seconds": result.age_seconds,
                 # When this entry stops counting as fresh.

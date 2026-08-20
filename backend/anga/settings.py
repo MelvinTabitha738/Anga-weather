@@ -180,6 +180,30 @@ else:
 WEATHER_AI_API_KEY = os.environ.get("WEATHER_AI_API_KEY", "")
 WEATHER_AI_BASE_URL = os.environ.get("WEATHER_AI_BASE_URL", "https://api.weather-ai.co")
 
+# Pointing the base URL at a local mock is easy to do and very easy to forget:
+# the app keeps serving plausible weather while the real provider records no
+# usage at all. Say so loudly at startup rather than letting it look like the
+# live integration is working.
+if any(host in WEATHER_AI_BASE_URL for host in ("localhost", "127.0.0.1", "0.0.0.0")):
+    logger.warning(
+        "WEATHER_AI_BASE_URL points at %s - responses are coming from a LOCAL MOCK, "
+        "not weather-ai.co. Your real API usage will stay at zero. Set "
+        "WEATHER_AI_BASE_URL=https://api.weather-ai.co to use the live API.",
+        WEATHER_AI_BASE_URL,
+    )
+
+if not WEATHER_AI_API_KEY:
+    logger.warning(
+        "WEATHER_AI_API_KEY is empty - every weather request will fail with a "
+        "configuration error until a wai_ key is set in the environment."
+    )
+elif not WEATHER_AI_API_KEY.startswith("wai_"):
+    # Never log the key itself - only the fact that its shape looks wrong.
+    logger.warning(
+        "WEATHER_AI_API_KEY does not start with 'wai_'. Weather-AI keys carry "
+        "that prefix, so this key will most likely be rejected with a 401."
+    )
+
 # Seconds a cached response is considered FRESH and served as-is.
 # 30 min: Weather-AI's free tier allows 1,000 requests per MONTH (~33/day across
 # every location combined), so shorter TTLs are arithmetically impossible.
@@ -216,9 +240,34 @@ WEATHER_MAX_BREAKER_SECONDS = env_int("WEATHER_MAX_BREAKER_SECONDS", 86400)
 # Fallback backoff when a 429 arrives without a usable X-RateLimit-Reset.
 WEATHER_DEFAULT_429_BACKOFF = env_int("WEATHER_DEFAULT_429_BACKOFF", 900)
 
+# Forecast days to request. The forecast arrives in the same response as
+# current conditions, so 7 costs exactly the same single request as 1.
+# Free plan allows 1-7; Pro 14; Scale 16.
+WEATHER_FORECAST_DAYS = env_int("WEATHER_FORECAST_DAYS", 7)
+
 # Weather-AI defaults to ai=true, which spends the much smaller AI quota
-# (200/month on free). We do not use the AI summary, so we opt out by default.
+# (200/month on free). Verified against the live API: ai_summary returns null
+# on a free-plan key even with ai=true, so we do not spend that quota by
+# default. Set WEATHER_INCLUDE_AI=True if your plan returns summaries.
 WEATHER_INCLUDE_AI = env_bool("WEATHER_INCLUDE_AI", False)
+
+# Language for the AI summary only ('en', 'sw'). Has no effect on the numeric
+# forecast, which carries no prose.
+WEATHER_LANG = os.environ.get("WEATHER_LANG", "en")
+
+# How long the upstream quota reading from GET /v1/usage is cached.
+# The documented X-RateLimit-* response headers do NOT exist on the live API
+# (verified across every header of several real responses), so /v1/usage is the
+# only way to observe quota - and it costs a request itself. Polling it rarely
+# is the point.
+WEATHER_USAGE_TTL = env_int("WEATHER_USAGE_TTL", 86400)
+
+# How long one worker's claim on the usage sync is held. This is what stops
+# every worker/instance spending a request on /v1/usage at once, and it also
+# bounds retries: a sync that fails is not attempted again until the claim
+# expires. Default 1h, so a persistently failing sync costs at most ~24
+# requests a day rather than one per cache miss.
+WEATHER_USAGE_LOCK_TTL = env_int("WEATHER_USAGE_LOCK_TTL", 3600)
 
 # ---------------------------------------------------------------------------
 # Django REST Framework

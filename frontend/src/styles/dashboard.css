@@ -1,0 +1,494 @@
+/* ===========================================================================
+   Anga - weather dashboard
+
+   Layout intent: one clear focal reading, a quiet row of supporting numbers,
+   then the forecast as two calm panels. Panels are separated by hairlines and
+   space rather than boxed cards with borders and shadows, which keeps the
+   density of a dashboard without the noise of one.
+   ======================================================================== */
+
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.5rem, 4vh, 2.5rem);
+  padding-bottom: 1rem;
+}
+
+/* --- Top bar: back link + freshness ------------------------------------ */
+
+.dashboard__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.linkback {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.7rem 0.4rem 0.5rem;
+  margin-left: -0.5rem;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--ink-muted);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: color 0.18s var(--ease), background 0.18s var(--ease);
+}
+
+.linkback:hover {
+  color: var(--ink);
+  background: var(--surface);
+}
+
+/* --- Hero: place and date ---------------------------------------------- */
+
+.hero__place {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 7vw, 4rem);
+  line-height: 1.04;
+  letter-spacing: -0.015em;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  /* "Elgeyo-Marakwet" and "Tharaka-Nithi" must wrap, not overflow. */
+  overflow-wrap: anywhere;
+}
+
+.hero__county {
+  order: -1;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 0.6rem;
+}
+
+.hero__date {
+  margin: 0.5rem 0 0;
+  color: var(--ink-muted);
+  font-size: 0.95rem;
+}
+
+/* --- Current conditions ------------------------------------------------- */
+
+.current {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 4vw, 2.25rem);
+  flex-wrap: wrap;
+}
+
+.current__icon {
+  flex: none;
+  opacity: 0.95;
+  /* Overrides the width/height attributes on the SVG so the glyph shrinks
+     with the viewport instead of forcing the readout to wrap on a phone. */
+  width: clamp(56px, 19vw, 104px);
+  height: auto;
+  /* The one place a drop shadow earns its keep: it lifts a line-art glyph off
+     a busy sky without needing a plate behind it. */
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.28));
+}
+
+.current__readout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+  flex: 1 1 8rem;
+}
+
+.current__temp {
+  font-family: var(--font-display);
+  font-size: clamp(4.5rem, 16vw, 8rem);
+  line-height: 0.86;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
+
+.current__condition {
+  margin: 0;
+  font-size: clamp(1.05rem, 2.4vw, 1.35rem);
+  color: var(--ink-muted);
+  letter-spacing: -0.005em;
+}
+
+/* --- Metric row --------------------------------------------------------- */
+
+.metrics {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.75rem;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.9rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  backdrop-filter: blur(12px);
+}
+
+.metric__icon {
+  color: var(--ink-faint);
+  margin-bottom: 0.1rem;
+}
+
+.metric__label {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.metric__value {
+  font-size: 1.2rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.015em;
+}
+
+.metric__hint {
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+}
+
+/* --- Panels (forecast, insight) ---------------------------------------- */
+
+.panel {
+  border-top: 1px solid var(--hairline);
+  padding-top: clamp(1rem, 3vh, 1.5rem);
+}
+
+.panel__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.panel__title {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 500;
+}
+
+/* Carries the rainfall unit once for the whole column, so individual rows can
+   show a bare number instead of repeating "mm" on every line. */
+.panel__legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.panel__legend-icon {
+  color: #9ec9f0;
+  flex: none;
+}
+
+/* --- Hourly strip ------------------------------------------------------- */
+
+.hourly {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0.5rem;
+  display: flex;
+  gap: 0.35rem;
+  /* Wide content scrolls inside its own container; the page never does. */
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-strong) transparent;
+}
+
+.hourly::-webkit-scrollbar {
+  height: 6px;
+}
+
+.hourly::-webkit-scrollbar-thumb {
+  background: var(--surface-strong);
+  border-radius: 999px;
+}
+
+.hourly__item {
+  flex: 0 0 auto;
+  width: 4.4rem;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.75rem 0.4rem;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid transparent;
+}
+
+/* "Now" is the reference point for everything else in the strip. */
+.hourly__item:first-child {
+  background: var(--surface-strong);
+  border-color: var(--hairline);
+}
+
+.hourly__time {
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.hourly__item:first-child .hourly__time {
+  color: var(--ink);
+}
+
+.hourly__icon {
+  opacity: 0.9;
+}
+
+.hourly__temp {
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Always rendered, so every column has identical height and the strip cannot
+   jitter out of alignment. */
+.hourly__rain {
+  font-size: 0.68rem;
+  color: #9ec9f0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  min-height: 1em;
+}
+
+.hourly__rain--dry {
+  color: var(--ink-faint);
+  opacity: 0.55;
+}
+
+/* --- 7-day list --------------------------------------------------------- */
+
+.daily {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.daily__row {
+  display: grid;
+  grid-template-columns: 5.5rem 1.6rem 3.2rem 2.4rem 1fr 2.4rem;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.daily__row:last-child {
+  border-bottom: none;
+}
+
+.daily__day {
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.daily__icon {
+  display: flex;
+  color: var(--ink-muted);
+}
+
+.daily__rain {
+  font-size: 0.78rem;
+  color: #9ec9f0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* A dry day is a known value, not missing data - dimmed rather than absent. */
+.daily__rain--dry {
+  color: var(--ink-faint);
+  opacity: 0.5;
+}
+
+.daily__low,
+.daily__high {
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.daily__low {
+  color: var(--ink-faint);
+}
+
+/* The bar makes the week's shape readable without comparing numbers. */
+.daily__track {
+  position: relative;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.daily__bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #7fb2e5 0%, #f0d08a 100%);
+}
+
+/* --- AI insight --------------------------------------------------------- */
+
+.insight {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.65;
+  max-width: 46rem;
+  color: var(--ink);
+}
+
+.insight__source {
+  margin: 0.6rem 0 0;
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+}
+
+/* --- Responsive --------------------------------------------------------- */
+
+/* ===========================================================================
+   Responsive
+   ======================================================================== */
+
+/* --- Large phones / small tablets --------------------------------------- */
+@media (max-width: 48rem) {
+  .metrics {
+    grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  }
+}
+
+/* --- Phones ------------------------------------------------------------- */
+@media (max-width: 34rem) {
+  .dashboard {
+    gap: 1.5rem;
+  }
+
+  /* Two columns beat one tall stack: all four numbers stay above the fold. */
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .metric {
+    padding: 0.7rem 0.8rem;
+  }
+
+  .metric__value {
+    font-size: 1.05rem;
+  }
+
+  .current {
+    gap: 1rem;
+  }
+
+  /* Title and legend stack, so neither gets truncated. */
+  .panel__head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+
+  /* The rain column STAYS: the legend promises it, so hiding it here would
+     leave the legend describing a column that is not on screen. Everything
+     else tightens around it instead. */
+  .daily__row {
+    grid-template-columns: 4.4rem 1.3rem 2.3rem 1.8rem 1fr 1.8rem;
+    gap: 0.45rem;
+    padding: 0.55rem 0;
+  }
+
+  .daily__day {
+    font-size: 0.8rem;
+  }
+
+  .daily__rain {
+    font-size: 0.74rem;
+  }
+
+  .daily__low,
+  .daily__high {
+    font-size: 0.84rem;
+  }
+
+  .hourly__item {
+    width: 3.9rem;
+    padding: 0.65rem 0.3rem;
+  }
+
+  .insight {
+    font-size: 0.96rem;
+  }
+}
+
+/* --- Small phones ------------------------------------------------------- */
+@media (max-width: 22.5rem) {
+  /* At 320px the temperature bar is the first thing to give; the low/high
+     figures either side of it still carry the same information. */
+  .daily__row {
+    grid-template-columns: 3.9rem 1.2rem 2.1rem 1.7rem 1fr 1.7rem;
+    gap: 0.35rem;
+  }
+
+  .daily__day {
+    font-size: 0.74rem;
+  }
+
+  .hourly__item {
+    width: 3.6rem;
+  }
+}
+
+/* --- Landscape phones --------------------------------------------------- */
+@media (max-height: 30rem) and (orientation: landscape) {
+  .dashboard {
+    gap: 1rem;
+  }
+
+  /* Vertical space is the constraint, so the hero yields first. */
+  .current__temp {
+    font-size: clamp(3rem, 14vh, 5rem);
+  }
+
+  .current__icon {
+    width: clamp(48px, 12vh, 72px);
+  }
+
+  .hero__place {
+    font-size: clamp(1.7rem, 8vh, 2.6rem);
+  }
+}

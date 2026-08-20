@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildDetails, formatPrecipitation, formatTemperature, formatWind } from '../lib/format'
+import {
+  buildMetrics,
+  formatDayName,
+  formatHour,
+  formatPrecipitation,
+  formatTemperature,
+  formatWind,
+  rainfallCell,
+  rainfallUnit,
+  temperatureBar,
+  weekRange,
+} from '../lib/format'
 import { formatAge, messageForError, stalenessNotice } from '../lib/messages'
 import { IDLE_THEME, RAIN_DENSITY, resolveTheme } from '../lib/weatherTheme'
 
@@ -29,22 +40,113 @@ describe('formatting', () => {
     expect(formatPrecipitation(12.2)).toBe('12 mm')
   })
 
-  it('builds details only from fields the API returned', () => {
-    const details = buildDetails({
-      temperature: 20,
-      humidity: 55,
-      wind_speed: null,
-      uv_index: null,
-      units: 'metric',
-    })
-    const keys = details.map((detail) => detail.key)
-    expect(keys).toContain('humidity')
-    expect(keys).not.toContain('wind')
-    expect(keys).not.toContain('uv_index')
+  it('builds metrics only from fields Weather-AI actually returns', () => {
+    const metrics = buildMetrics(
+      { wind_speed: 5.2, wind_direction: 'WNW', precipitation_this_hour: 0.1, units: 'metric' },
+      [{ temp_max: 26.3, temp_min: 15, precipitation: 2.2 }],
+    )
+    const keys = metrics.map((m) => m.key)
+    expect(keys).toContain('wind')
+    expect(keys).toContain('rain-today')
+    expect(keys).toContain('range')
+    // Never derivable from this provider.
+    expect(keys).not.toContain('humidity')
+    expect(keys).not.toContain('pressure')
+    expect(keys).not.toContain('visibility')
+  })
+
+  it('drops metrics whose underlying value is missing', () => {
+    const metrics = buildMetrics({ wind_speed: null, units: 'metric' }, [])
+    expect(metrics.map((m) => m.key)).not.toContain('wind')
   })
 
   it('returns nothing at all for an absent payload', () => {
-    expect(buildDetails(null)).toEqual([])
+    expect(buildMetrics(null, null)).toEqual([])
+  })
+})
+
+describe('rainfall cells', () => {
+  it('states the unit for the column legend', () => {
+    expect(rainfallUnit('metric')).toBe('mm')
+    expect(rainfallUnit('imperial')).toBe('in')
+  })
+
+  it('shows a bare figure, leaving the unit to the legend', () => {
+    const cell = rainfallCell(1.9, 'metric')
+    expect(cell.text).toBe('1.9')
+    expect(cell.dry).toBe(false)
+    // ...but assistive tech still gets the whole phrase.
+    expect(cell.label).toBe('1.9 millimetres of rain')
+  })
+
+  it('marks a dry day explicitly instead of rendering nothing', () => {
+    // Weather-AI returns 0.0 for dry days - a known value, not missing data.
+    const cell = rainfallCell(0, 'metric')
+    expect(cell.text).toBe('—')
+    expect(cell.dry).toBe(true)
+    expect(cell.label).toBe('No rain expected')
+  })
+
+  it('distinguishes genuinely missing data from a dry day', () => {
+    expect(rainfallCell(null).label).toBe('Rainfall not available')
+    expect(rainfallCell(undefined).label).toBe('Rainfall not available')
+  })
+
+  it('keeps a trace visible rather than rounding it to zero', () => {
+    expect(rainfallCell(0.1).text).toBe('0.1')
+    expect(rainfallCell(0.1).dry).toBe(false)
+  })
+
+  it('rounds larger totals and speaks the right unit', () => {
+    expect(rainfallCell(12.6).text).toBe('13')
+    expect(rainfallCell(2.5, 'imperial').label).toBe('2.5 inches of rain')
+  })
+})
+
+describe('forecast time formatting', () => {
+  it('renders naive local timestamps without shifting them', () => {
+    // Upstream sends East Africa wall-clock with no offset; 15:00 must stay 3 PM.
+    expect(formatHour('2026-08-20T15:00')).toBe('3 PM')
+    expect(formatHour('2026-08-20T00:00')).toBe('12 AM')
+    expect(formatHour('2026-08-20T12:00')).toBe('12 PM')
+  })
+
+  it('rejects malformed timestamps rather than printing NaN', () => {
+    expect(formatHour('not-a-time')).toBeNull()
+    expect(formatHour(null)).toBeNull()
+  })
+
+  it('names the first two days relatively', () => {
+    expect(formatDayName('2026-08-20', 0)).toBe('Today')
+    expect(formatDayName('2026-08-21', 1)).toBe('Tomorrow')
+    expect(formatDayName('2026-08-22', 2)).toBe('Saturday')
+  })
+})
+
+describe('temperature bars', () => {
+  const week = [
+    { temp_min: 15, temp_max: 26 },
+    { temp_min: 14, temp_max: 28 },
+  ]
+
+  it('spans the week range', () => {
+    expect(weekRange(week)).toEqual({ weekMin: 14, weekMax: 28 })
+  })
+
+  it('positions a day inside that range', () => {
+    const { weekMin, weekMax } = weekRange(week)
+    const bar = temperatureBar(week[0], weekMin, weekMax)
+    expect(bar.left).toBeCloseTo((1 / 14) * 100, 1)
+    expect(bar.width).toBeCloseTo((11 / 14) * 100, 1)
+  })
+
+  it('returns null when a day has no temperatures', () => {
+    expect(temperatureBar({ temp_min: null, temp_max: null }, 14, 28)).toBeNull()
+  })
+
+  it('survives a flat week without dividing by zero', () => {
+    const bar = temperatureBar({ temp_min: 20, temp_max: 20 }, 20, 20)
+    expect(bar).toEqual({ left: 0, width: 100 })
   })
 })
 

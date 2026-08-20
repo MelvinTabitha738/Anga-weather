@@ -16,21 +16,44 @@ from weather import client as client_module
 from weather import metrics
 from weather.exceptions import UpstreamRateLimited, UpstreamUnavailable
 
-# A minimal upstream body in one of the shapes weather/adapter.py accepts.
+# A minimal upstream body in the VERIFIED live Weather-AI shape. The full
+# captured response lives at tests/fixtures/live_weather_response.json.
 SAMPLE_UPSTREAM = {
+    "lat": -1.2864,
+    "lon": 36.8172,
+    "units": "metric",
+    "days": 7,
     "current": {
+        "time": "2026-08-20T15:30",
+        "interval": 900,
         "temperature": 24.5,
-        "feels_like": 25.1,
-        "humidity": 62,
-        "wind_speed": 11.2,
-        "wind_deg": 130,
-        "precipitation": 0.0,
-        "condition": {"text": "Partly cloudy"},
-        "weather_code": 2,
+        "windspeed": 11.2,
+        "winddirection": 130,
         "is_day": 1,
-        "time": "2026-08-20T09:00:00Z",
-    }
+        "weathercode": 2,
+    },
+    "hourly": [
+        {"time": "2026-08-20T15:00", "temp": 24.5, "precipitation": 0.0, "weathercode": 2},
+        {"time": "2026-08-20T16:00", "temp": 24.1, "precipitation": 0.2, "weathercode": 51},
+        {"time": "2026-08-20T17:00", "temp": 23.4, "precipitation": 1.1, "weathercode": 61},
+    ],
+    "daily": [
+        {"date": "2026-08-20", "temp_max": 26.3, "temp_min": 15.0,
+         "precipitation": 2.2, "weathercode": 51},
+        {"date": "2026-08-21", "temp_max": 28.4, "temp_min": 14.1,
+         "precipitation": 0.4, "weathercode": 2},
+    ],
+    "ai_summary": None,
 }
+
+
+def load_live_fixture():
+    """The real captured response, for tests that assert against reality."""
+    import json
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parent / "fixtures" / "live_weather_response.json"
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 class FakeClient:
@@ -40,12 +63,23 @@ class FakeClient:
     "did it work" but "how many times did we touch upstream".
     """
 
-    def __init__(self, payload=None, error=None, delay=0.0):
+    def __init__(self, payload=None, error=None, delay=0.0, usage_delay=0.0):
         self.payload = payload if payload is not None else SAMPLE_UPSTREAM
         self.error = error
         self.delay = delay
+        self.usage_delay = usage_delay
         self.calls = 0
+        # /v1/usage costs a request of its own, so tests count it separately.
+        self.usage_calls = 0
         self._lock = threading.Lock()
+
+    def fetch_usage(self):
+        with self._lock:
+            self.usage_calls += 1
+        if self.usage_delay:
+            time.sleep(self.usage_delay)
+        return {"plan": "free", "used": 12, "limit": 1000,
+                "remaining": 988, "unlimited": False}
 
     def fetch_weather(self, latitude, longitude, units="metric"):
         with self._lock:
@@ -100,6 +134,7 @@ class WeatherTransactionTestCase(CacheIsolationMixin, TransactionTestCase):
 __all__ = [
     "FakeClient",
     "SAMPLE_UPSTREAM",
+    "load_live_fixture",
     "WeatherTestCase",
     "WeatherTransactionTestCase",
     "seed_minimal_gazetteer",

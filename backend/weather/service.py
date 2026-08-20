@@ -160,6 +160,31 @@ def _degrade(location, cached, reason, retry_at=None):
     raise NoDataAvailable(reason, retry_at=retry_at)
 
 
+def _sync_usage_if_due(client):
+    """Refresh the authoritative quota reading, at most once per sync interval.
+
+    Reached only on a cache miss, so it piggybacks on work already happening.
+    It costs a request of its own, which is why WEATHER_USAGE_TTL defaults to a
+    day - the running local estimate covers the gap between syncs.
+
+    The claim is what makes this safe across workers. The coalescing lock is
+    per-location and therefore does NOT serialise this: concurrent leaders for
+    different locations would each sync. quota.claim_usage_sync() is a shared
+    atomic claim, so exactly one worker in the whole deployment spends the
+    request.
+    """
+    if not quota.claim_usage_sync():
+        return
+    payload = client.fetch_usage()
+    if payload:
+        quota.record_usage(payload)
+        metrics.increment("usage_synced")
+    else:
+        # The claim stays in place as the retry backoff, so a failing endpoint
+        # is not hammered by every subsequent cache miss.
+        logger.info("usage_sync_failed - not retrying until the claim expires")
+
+
 def _fetch_and_store(location, units, cached):
     """Leader path: one upstream call, then cache and return it."""
     metrics.increment("upstream_request")
@@ -170,8 +195,11 @@ def _fetch_and_store(location, units, cached):
         location.longitude,
     )
 
+    client = get_client()
+    _sync_usage_if_due(client)
+
     try:
-        raw = get_client().fetch_weather(location.latitude, location.longitude, units)
+        raw = client.fetch_weather(location.latitude, location.longitude, units)
     except UpstreamRateLimited as exc:
         metrics.increment("upstream_rate_limited")
         logger.warning(

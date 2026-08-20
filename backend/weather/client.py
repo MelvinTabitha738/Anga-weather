@@ -31,6 +31,7 @@ from weather import quota
 logger = logging.getLogger(__name__)
 
 WEATHER_PATH = "/v1/weather"
+USAGE_PATH = "/v1/usage"
 
 
 class WeatherAIClient:
@@ -61,16 +62,28 @@ class WeatherAIClient:
         params = {
             "lat": f"{float(latitude):.4f}",
             "lon": f"{float(longitude):.4f}",
-            # We only render current conditions. days=1 is the smallest valid
-            # value and keeps the response small.
-            "days": 1,
-            # Documented default is ai=true, which spends the separate (much
-            # smaller) AI quota. We do not use the AI summary.
+            # The forecast arrives in the SAME response as current conditions,
+            # so asking for 7 days costs exactly the same one request against
+            # the monthly quota as asking for 1. There is no reason not to.
+            # 7 is the free-plan maximum.
+            "days": settings.WEATHER_FORECAST_DAYS,
+            # Documented default is ai=true, which spends the separate and much
+            # smaller AI quota (200/month on free). Verified against the live
+            # API: ai_summary comes back null on a free-plan key even with
+            # ai=true, so requesting it by default would spend that quota for
+            # nothing. Flip WEATHER_INCLUDE_AI if a plan starts returning it.
             "ai": "true" if settings.WEATHER_INCLUDE_AI else "false",
             "units": units,
+            # Only affects the AI summary text.
+            "lang": settings.WEATHER_LANG,
         }
 
         url = f"{self.base_url}{WEATHER_PATH}"
+
+        # Count the attempt before making it. Counting failures too keeps the
+        # remaining-quota estimate conservative rather than optimistic.
+        quota.record_upstream_call()
+
         try:
             response = self._session.get(
                 url,
@@ -95,17 +108,18 @@ class WeatherAIClient:
             )
             raise UpstreamUnavailable("connection_error") from exc
 
-        # Record quota state from every response, success or failure - the
-        # headers are free information that saves us calling /v1/usage.
+        # Attempt to read X-RateLimit-* anyway. They are absent on the live API
+        # today, so this is a no-op that costs nothing and picks them up
+        # automatically if the provider ever starts sending them.
         quota.record_headers(response.headers)
 
         logger.info(
-            "upstream_response path=%s lat=%s lon=%s status=%s remaining=%s",
+            "upstream_response path=%s lat=%s lon=%s status=%s est_remaining=%s",
             WEATHER_PATH,
             latitude,
             longitude,
             response.status_code,
-            quota.parse_rate_limit_headers(response.headers).get("remaining"),
+            quota.estimated_remaining(),
         )
 
         return self._handle_response(response)
@@ -149,6 +163,42 @@ class WeatherAIClient:
             raise UpstreamUnavailable("unexpected_payload")
 
         return payload
+
+
+    def fetch_usage(self) -> dict:
+        """GET /v1/usage - the authoritative quota reading.
+
+        This costs a request itself, so callers must rate-limit how often they
+        ask (see quota.usage_sync_due). Returns {} on any failure: quota
+        bookkeeping must never break a weather response.
+        """
+        if not self.api_key:
+            return {}
+
+        quota.record_upstream_call()
+        try:
+            response = self._session.get(
+                f"{self.base_url}{USAGE_PATH}",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Accept": "application/json",
+                },
+                timeout=(settings.WEATHER_CONNECT_TIMEOUT, settings.WEATHER_READ_TIMEOUT),
+            )
+        except requests.RequestException as exc:
+            logger.info("usage_fetch_failed error=%s", type(exc).__name__)
+            return {}
+
+        if response.status_code != 200:
+            logger.info("usage_fetch_status status=%s", response.status_code)
+            return {}
+
+        try:
+            payload = response.json()
+        except ValueError:
+            return {}
+
+        return payload if isinstance(payload, dict) else {}
 
 
 # Module-level client so the underlying connection pool is reused across

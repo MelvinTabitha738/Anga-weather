@@ -1,9 +1,9 @@
 /**
- * Skeleton shaped like the real reading.
+ * Skeleton shaped like the real dashboard.
  *
- * The blocks match the final layout's proportions so content does not jump
- * when it arrives - a generic spinner would be less work and a worse
- * experience.
+ * The blocks match the final layout's proportions - hero, metric row, forecast
+ * rows - so content does not jump when it arrives. A generic spinner would be
+ * less work and a worse experience.
  */
 export default function LoadingState({ label }) {
   return (
@@ -19,6 +19,8 @@ export default function LoadingState({ label }) {
         <div className="skeleton__bar skeleton__bar--cell" />
         <div className="skeleton__bar skeleton__bar--cell" />
       </div>
+      <div className="skeleton__bar skeleton__bar--panel" />
+      <div className="skeleton__bar skeleton__bar--panel" />
     </div>
   )
 }
