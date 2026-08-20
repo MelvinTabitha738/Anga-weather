@@ -1,0 +1,122 @@
+"""Seed data for the Kenya gazetteer: all 47 counties plus major towns.
+
+Each entry is (name, county, kind, latitude, longitude, prominence, aliases).
+Coordinates are the county headquarters or town centre. Prominence is a manual
+search weight - it decides which of several matches a user most likely meant.
+
+Kept as plain data rather than a fixture so it stays readable and diffable, and
+so `seed_locations` can upsert it idempotently on every deploy.
+"""
+
+COUNTY = "county"
+TOWN = "town"
+
+# --- The 47 counties, keyed on their headquarters town ---------------------
+COUNTIES = [
+    # (name, county, kind, lat, lon, prominence, aliases)
+    ("Nairobi", "Nairobi", COUNTY, -1.28640, 36.81720, 100, ["nairobi-city", "nbo"]),
+    ("Mombasa", "Mombasa", COUNTY, -4.04350, 39.66820, 95, ["msa"]),
+    ("Kisumu", "Kisumu", COUNTY, -0.09170, 34.76800, 90, []),
+    ("Nakuru", "Nakuru", COUNTY, -0.30310, 36.08000, 90, []),
+    ("Uasin Gishu", "Uasin Gishu", COUNTY, 0.51430, 35.26980, 70, []),
+    ("Kiambu", "Kiambu", COUNTY, -1.17140, 36.83560, 75, []),
+    ("Machakos", "Machakos", COUNTY, -1.51770, 37.26340, 72, []),
+    ("Kakamega", "Kakamega", COUNTY, 0.28270, 34.75190, 72, []),
+    ("Meru", "Meru", COUNTY, 0.04630, 37.65590, 72, []),
+    ("Nyeri", "Nyeri", COUNTY, -0.42010, 36.94760, 72, []),
+    ("Kisii", "Kisii", COUNTY, -0.68170, 34.76800, 70, []),
+    ("Kilifi", "Kilifi", COUNTY, -3.63050, 39.84990, 70, []),
+    ("Garissa", "Garissa", COUNTY, -0.45360, 39.64610, 68, []),
+    ("Kajiado", "Kajiado", COUNTY, -1.85220, 36.77670, 68, []),
+    ("Kericho", "Kericho", COUNTY, -0.36890, 35.28610, 68, []),
+    ("Bungoma", "Bungoma", COUNTY, 0.56350, 34.56060, 66, []),
+    ("Embu", "Embu", COUNTY, -0.53100, 37.45750, 66, []),
+    ("Kitui", "Kitui", COUNTY, -1.36670, 38.01060, 66, []),
+    ("Narok", "Narok", COUNTY, -1.08330, 35.86670, 66, []),
+    ("Trans Nzoia", "Trans Nzoia", COUNTY, 1.01570, 35.00620, 64, ["transnzoia"]),
+    ("Turkana", "Turkana", COUNTY, 3.11910, 35.59770, 64, []),
+    ("Busia", "Busia", COUNTY, 0.46080, 34.11150, 62, []),
+    ("Siaya", "Siaya", COUNTY, 0.06070, 34.28810, 62, []),
+    ("Homa Bay", "Homa Bay", COUNTY, -0.52730, 34.45710, 62, ["homabay"]),
+    ("Migori", "Migori", COUNTY, -1.06340, 34.47310, 62, []),
+    ("Nyamira", "Nyamira", COUNTY, -0.56330, 34.93580, 60, []),
+    ("Vihiga", "Vihiga", COUNTY, 0.08330, 34.71670, 60, ["mbale"]),
+    ("Bomet", "Bomet", COUNTY, -0.78330, 35.34170, 60, []),
+    ("Nandi", "Nandi", COUNTY, 0.20320, 35.10500, 60, ["kapsabet"]),
+    ("Baringo", "Baringo", COUNTY, 0.49190, 35.74310, 58, ["kabarnet"]),
+    ("Laikipia", "Laikipia", COUNTY, 0.27250, 36.53860, 58, ["rumuruti"]),
+    ("Nyandarua", "Nyandarua", COUNTY, -0.27610, 36.37810, 58, ["ol-kalou", "olkalou"]),
+    ("Kirinyaga", "Kirinyaga", COUNTY, -0.49890, 37.28030, 58, ["kerugoya"]),
+    ("Murang'a", "Murang'a", COUNTY, -0.71670, 37.15000, 60, ["muranga"]),
+    ("Makueni", "Makueni", COUNTY, -1.78330, 37.63330, 58, ["wote"]),
+    ("Tharaka-Nithi", "Tharaka-Nithi", COUNTY, -0.16670, 37.88330, 55, ["tharaka-nithi", "kathwana", "tharaka"]),
+    ("Isiolo", "Isiolo", COUNTY, 0.35460, 37.58220, 56, []),
+    ("Marsabit", "Marsabit", COUNTY, 2.32840, 37.98990, 55, []),
+    ("Samburu", "Samburu", COUNTY, 1.09670, 36.69810, 55, ["maralal"]),
+    ("West Pokot", "West Pokot", COUNTY, 1.23890, 35.11190, 55, ["westpokot", "kapenguria"]),
+    ("Elgeyo-Marakwet", "Elgeyo-Marakwet", COUNTY, 0.67000, 35.50810, 55, ["elgeyo-marakwet", "iten", "elgeyo"]),
+    ("Taita-Taveta", "Taita-Taveta", COUNTY, -3.40000, 38.36670, 55, ["taita-taveta", "wundanyi", "taita"]),
+    ("Kwale", "Kwale", COUNTY, -4.17370, 39.45210, 58, []),
+    ("Lamu", "Lamu", COUNTY, -2.27170, 40.90200, 56, []),
+    ("Tana River", "Tana River", COUNTY, -1.49890, 40.03000, 52, ["tanariver", "hola"]),
+    ("Wajir", "Wajir", COUNTY, 1.74710, 40.05730, 54, []),
+    ("Mandera", "Mandera", COUNTY, 3.93660, 41.86700, 54, []),
+]
+
+# --- Major towns that are not county headquarters --------------------------
+TOWNS = [
+    ("Thika", "Kiambu", TOWN, -1.03330, 37.06930, 80, []),
+    ("Eldoret", "Uasin Gishu", TOWN, 0.51430, 35.26980, 88, []),
+    ("Kitale", "Trans Nzoia", TOWN, 1.01570, 35.00620, 78, []),
+    ("Malindi", "Kilifi", TOWN, -3.21750, 40.11910, 78, []),
+    ("Naivasha", "Nakuru", TOWN, -0.71670, 36.43330, 78, []),
+    ("Nanyuki", "Laikipia", TOWN, 0.01670, 37.07250, 76, []),
+    ("Voi", "Taita-Taveta", TOWN, -3.39610, 38.55610, 70, []),
+    ("Nyahururu", "Laikipia", TOWN, 0.03640, 36.36390, 68, []),
+    ("Ruiru", "Kiambu", TOWN, -1.15000, 36.96670, 68, []),
+    ("Kitengela", "Kajiado", TOWN, -1.46670, 36.96670, 68, []),
+    ("Ongata Rongai", "Kajiado", TOWN, -1.39560, 36.75170, 66, ["rongai"]),
+    ("Ngong", "Kajiado", TOWN, -1.35360, 36.65970, 66, []),
+    ("Athi River", "Machakos", TOWN, -1.45640, 36.97840, 66, ["mavoko", "athiriver"]),
+    ("Juja", "Kiambu", TOWN, -1.10000, 37.01670, 64, []),
+    ("Kikuyu", "Kiambu", TOWN, -1.24640, 36.66280, 64, []),
+    ("Limuru", "Kiambu", TOWN, -1.10000, 36.65000, 64, []),
+    ("Karatina", "Nyeri", TOWN, -0.48330, 37.13330, 62, []),
+    ("Mtwapa", "Kilifi", TOWN, -3.94360, 39.74440, 64, []),
+    ("Watamu", "Kilifi", TOWN, -3.35000, 40.01670, 62, []),
+    ("Ukunda", "Kwale", TOWN, -4.28330, 39.58330, 64, ["diani", "diani-beach"]),
+    ("Chuka", "Tharaka-Nithi", TOWN, -0.33330, 37.65000, 58, []),
+    ("Maua", "Meru", TOWN, 0.23330, 37.93330, 58, []),
+    ("Mwingi", "Kitui", TOWN, -0.93330, 38.06030, 58, []),
+    ("Kangundo", "Machakos", TOWN, -1.30000, 37.35000, 56, []),
+    ("Kibwezi", "Makueni", TOWN, -2.40830, 37.96670, 56, []),
+    ("Mtito Andei", "Makueni", TOWN, -2.68330, 38.16670, 54, ["mtitoandei"]),
+    ("Emali", "Makueni", TOWN, -2.06670, 37.45000, 52, []),
+    ("Molo", "Nakuru", TOWN, -0.24890, 35.73140, 58, []),
+    ("Gilgil", "Nakuru", TOWN, -0.49310, 36.31720, 56, []),
+    ("Njoro", "Nakuru", TOWN, -0.32830, 35.94500, 56, []),
+    ("Webuye", "Bungoma", TOWN, 0.61670, 34.76670, 56, []),
+    ("Kimilili", "Bungoma", TOWN, 0.78330, 34.71670, 54, []),
+    ("Mumias", "Kakamega", TOWN, 0.33330, 34.48330, 58, []),
+    ("Bondo", "Siaya", TOWN, 0.25000, 34.26670, 54, []),
+    ("Ahero", "Kisumu", TOWN, -0.16670, 34.91670, 54, []),
+    ("Oyugis", "Homa Bay", TOWN, -0.50000, 34.73330, 54, []),
+    ("Awendo", "Migori", TOWN, -0.90000, 34.53330, 52, []),
+    ("Kilgoris", "Narok", TOWN, -1.00000, 34.88330, 54, []),
+    ("Litein", "Kericho", TOWN, -0.61670, 35.18330, 52, []),
+    ("Sotik", "Bomet", TOWN, -0.68330, 35.11670, 54, []),
+    ("Londiani", "Kericho", TOWN, -0.16670, 35.60000, 50, []),
+    ("Eldama Ravine", "Baringo", TOWN, 0.05000, 35.73330, 52, ["eldamaravine"]),
+    ("Maragua", "Murang'a", TOWN, -0.78330, 37.13330, 52, []),
+    ("Kenol", "Murang'a", TOWN, -0.93330, 37.11670, 52, []),
+    ("Sagana", "Kirinyaga", TOWN, -0.66670, 37.20000, 52, []),
+    ("Othaya", "Nyeri", TOWN, -0.55000, 36.93330, 50, []),
+    ("Taveta", "Taita-Taveta", TOWN, -3.39890, 37.68280, 52, []),
+    ("Garsen", "Tana River", TOWN, -2.26670, 40.11670, 48, []),
+    ("Mpeketoni", "Lamu", TOWN, -2.33330, 40.66670, 48, []),
+    ("Moyale", "Marsabit", TOWN, 3.51670, 39.05000, 52, []),
+    ("Kakuma", "Turkana", TOWN, 3.71670, 34.86670, 50, []),
+    ("Lokichogio", "Turkana", TOWN, 4.20500, 34.34810, 46, ["lokichoggio"]),
+]
+
+ALL_LOCATIONS = COUNTIES + TOWNS
