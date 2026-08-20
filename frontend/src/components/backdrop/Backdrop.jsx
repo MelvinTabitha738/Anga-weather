@@ -14,22 +14,45 @@ import RainCanvas from './RainCanvas'
 /**
  * The atmosphere behind everything.
  *
- * Layer order, back to front:
- *   1. sky gradient      - from the theme's three stops
- *   2. glow              - sun warmth, moonlight, or storm light
- *   3. effect layer      - clouds / stars / rain / fog
- *   4. scrim             - a fixed dark wash that guarantees text contrast on
- *                          every sky, bright noon included
+ * Two modes:
+ *
+ * PHOTO - the landing page. A photograph of Mount Kenya at dusk, drifting
+ *   slowly so the sky is alive rather than a still. There is no weather to
+ *   react to before a location is chosen, so this is where the brand lives.
+ *
+ * REACTIVE - once a location is loaded. Layers, back to front: the sky
+ *   gradient from the theme's three stops, a glow for sun/moon/storm light, the
+ *   effect layer (clouds / stars / rain / fog), and the scrim.
+ *
+ * The scrim is the constant. Its alphas are solved per sky in weatherTheme.js;
+ * the photograph gets its own, measured against the brightest pixel that falls
+ * under text (a sunlit cloud at luminance 0.84, which needs 0.66 to carry
+ * --ink-muted past 4.5:1).
  *
  * All decorative, so the whole thing is aria-hidden. The weather is conveyed
  * in text by the components above it, not by these visuals alone.
  */
-export default function Backdrop({ theme }) {
+export default function Backdrop({ theme, photo = false }) {
   const style = useMemo(() => themeToCssVars(theme), [theme])
 
   const showClouds = theme.effect === EFFECT_CLOUDS || theme.effect === EFFECT_STORM
   const showRain = theme.effect === EFFECT_RAIN || theme.effect === EFFECT_STORM
   const isStorm = theme.effect === EFFECT_STORM
+
+  if (photo) {
+    return (
+      <div
+        className="backdrop backdrop--photo"
+        aria-hidden="true"
+        data-testid="backdrop"
+        data-effect="photo"
+        data-intensity="none"
+      >
+        <div className="backdrop__photo" />
+        <div className="backdrop__photo-scrim" />
+      </div>
+    )
+  }
 
   return (
     <div

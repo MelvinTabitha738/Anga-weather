@@ -775,16 +775,34 @@ carry it, which is visually near-identical at that scale and far cheaper. Gradie
 generated per instance with `useId`; duplicates would make every icon inherit the first
 one's palette.
 
-### Identity
+### Identity and the landing page
 
 The mark is a sun low over a horizon under an open sky — the sky itself rather than a
 weather symbol, since a cloud or a thermometer would tie the brand to one condition while
 the product shows all of them. It is built to survive being small: the sun and horizon
 separate at 20px because they differ in value, not only in hue.
 
-The landing view leads with the word and its meaning ("Anga — Swahili for *sky*") over a
-warm equatorial dawn, because the first impression has to make the name mean something
-before a single number arrives. A neutral grey-blue said nothing about where you are.
+The landing page is built to a supplied design: an eyebrow, a two-line Playfair Display
+headline with the second line in warm amber, a short lede, the search, starting points,
+and three feature panels — over a **photograph of Mount Kenya at dusk**.
+
+**The sky moves.** A still photograph of a sky reads as a poster; a slow 80-second pan
+reads as weather. It is transform-only and GPU-composited, so the cost is a layer rather
+than a repaint, and it holds still under `prefers-reduced-motion`.
+
+**The design's live-weather card is deliberately absent.** Showing a reading before anyone
+has searched would mean an upstream call on every landing view — on a 1,000-request
+monthly quota, the single most expensive thing this product could do. The space goes back
+to the photograph instead.
+
+Type is **Playfair Display** for the display voice and **Outfit** for the geometric UI
+face, matched to the design.
+
+The photograph gets its own scrim, measured rather than guessed: the brightest pixel
+falling under text is a sunlit cloud at luminance 0.84, needing alpha 0.66 to carry
+`--ink-muted` past 4.5:1. A flat 0.66 would flatten the photograph, so the weight is
+pushed left where the words are and lifted on the right where the cumulus should stay
+visible. In portrait the text spans the frame, so the veil does too.
 
 Performance and comfort: one canvas and one `requestAnimationFrame` loop, delta-time
 integrated so speed is identical at 60Hz and 120Hz, paused when the tab is hidden, and
@@ -1105,11 +1123,11 @@ Full documentation with defaults is in [`backend/.env.example`](backend/.env.exa
 
 ## Testing
 
-**211 tests.** 98 backend, 113 frontend.
+**217 tests.** 98 backend, 119 frontend.
 
 ```bash
 cd backend && python manage.py test        # 98 tests
-cd frontend && npm test                    # 113 tests
+cd frontend && npm test                    # 119 tests
 ```
 
 Coverage is concentrated on the engineering behaviour rather than spread thin:

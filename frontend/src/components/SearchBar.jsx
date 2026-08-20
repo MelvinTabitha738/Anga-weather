@@ -22,7 +22,7 @@ import { useLocationSearch } from '../hooks/useLocationSearch'
  * Suggestions come from our own gazetteer, so they cost no upstream quota -
  * which is why we can afford to search as the user types.
  */
-export default function SearchBar({ onSelect, currentLabel }) {
+export default function SearchBar({ onSelect, currentLabel, variant = 'compact', placeholder }) {
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
@@ -112,8 +112,15 @@ export default function SearchBar({ onSelect, currentLabel }) {
 
   const showSuggestions = isOpen && trimmed.length > 0
 
+  // The landing renders two of these - one in the masthead, one in the hero -
+  // so their accessible names must differ, or a screen reader announces two
+  // identical comboboxes with no way to tell them apart. The name also mirrors
+  // the visible placeholder, which is what a sighted user is reading.
+  const fieldLabel =
+    variant === 'hero' ? 'Search a town, county or region' : 'Search a town or county' 
+
   return (
-    <div className="search" ref={containerRef}>
+    <div className={`search search--${variant}`} ref={containerRef}>
       <div
         className="search__field"
         role="combobox"
@@ -132,8 +139,11 @@ export default function SearchBar({ onSelect, currentLabel }) {
           }}
           onFocus={() => setIsOpen(true)}
           onKeyDown={onKeyDown}
-          placeholder={currentLabel ? `Search — showing ${currentLabel}` : 'Search a Kenyan town or county'}
-          aria-label="Search for a Kenyan town or county"
+          placeholder={
+            placeholder ||
+            (currentLabel ? `Search — showing ${currentLabel}` : fieldLabel)
+          }
+          aria-label={fieldLabel}
           aria-controls={listId}
           aria-autocomplete="list"
           aria-activedescendant={
@@ -174,7 +184,12 @@ export default function SearchBar({ onSelect, currentLabel }) {
       </div>
 
       {showSuggestions && (
-        <ul className="suggestions" id={listId} role="listbox" aria-label="Location suggestions">
+        <ul
+          className="suggestions"
+          id={listId}
+          role="listbox"
+          aria-label={`Location suggestions for ${fieldLabel}`}
+        >
           {!resultsAreCurrent ? (
             <li className="suggestions__empty">Searching…</li>
           ) : results.length === 0 ? (

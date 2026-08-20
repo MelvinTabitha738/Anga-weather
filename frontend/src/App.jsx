@@ -62,7 +62,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <Backdrop theme={theme} />
+      <Backdrop theme={theme} photo={!selection} />
 
       <div className="shell">
         <header className="masthead">
@@ -82,7 +82,15 @@ export default function App() {
         </header>
 
         <main aria-busy={isRefreshing}>
-          {!selection && <EmptyState suggestions={starters} onSelect={choose} />}
+          {!selection && (
+            <EmptyState suggestions={starters} onSelect={choose}>
+              <SearchBar
+                onSelect={choose}
+                variant="hero"
+                placeholder="Search a town, county or region"
+              />
+            </EmptyState>
+          )}
 
           {selection && status === LOADING && <LoadingState label={selection.label} />}
 
@@ -96,14 +104,14 @@ export default function App() {
         </main>
 
         <footer className="colophon">
+          <span>Anga — weather for Kenya, from the coast to the frontier.</span>
           <span>
-            Weather data from{' '}
+            Served through a caching backend to stay fast. Data from{' '}
             <a href="https://weather-ai.co/docs" target="_blank" rel="noreferrer noopener">
               Weather-AI
             </a>
-            , served through a caching backend.
+            .
           </span>
-          <span>Cached server-side to stay fast and within the provider&rsquo;s limits.</span>
         </footer>
       </div>
     </div>

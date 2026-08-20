@@ -39,7 +39,7 @@ describe('submitting a search', () => {
     const onSelect = vi.fn()
 
     render(<SearchBar onSelect={onSelect} />)
-    const input = screen.getByRole('textbox', { name: /search for a kenyan/i })
+    const input = screen.getByRole('textbox', { name: /search a town or county/i })
 
     await userEvent.type(input, 'Meru')
     await userEvent.keyboard('{Enter}')
@@ -62,7 +62,7 @@ describe('submitting a search', () => {
     const onSelect = vi.fn()
 
     render(<SearchBar onSelect={onSelect} />)
-    const input = screen.getByRole('textbox', { name: /search for a kenyan/i })
+    const input = screen.getByRole('textbox', { name: /search a town or county/i })
 
     await userEvent.type(input, 'Kaka')
     await screen.findByRole('option', { name: /kakamega/i })
@@ -82,7 +82,7 @@ describe('submitting a search', () => {
     const onSelect = vi.fn()
 
     render(<SearchBar onSelect={onSelect} />)
-    await userEvent.type(screen.getByRole('textbox', { name: /search for a kenyan/i }), 'Meru')
+    await userEvent.type(screen.getByRole('textbox', { name: /search a town or county/i }), 'Meru')
     await screen.findByRole('option', { name: /meru/i })
     await userEvent.keyboard('{Enter}')
 
@@ -94,7 +94,7 @@ describe('submitting a search', () => {
     const onSelect = vi.fn()
 
     render(<SearchBar onSelect={onSelect} />)
-    await userEvent.type(screen.getByRole('textbox', { name: /search for a kenyan/i }), 'a')
+    await userEvent.type(screen.getByRole('textbox', { name: /search a town or county/i }), 'a')
     await screen.findByRole('option', { name: /kakamega/i })
 
     await userEvent.keyboard('{ArrowDown}{ArrowDown}{Enter}')
@@ -108,7 +108,7 @@ describe('the search button', () => {
     const onSelect = vi.fn()
 
     render(<SearchBar onSelect={onSelect} />)
-    await userEvent.type(screen.getByRole('textbox', { name: /search for a kenyan/i }), 'Nyeri')
+    await userEvent.type(screen.getByRole('textbox', { name: /search a town or county/i }), 'Nyeri')
     await userEvent.click(screen.getByRole('button', { name: 'Search' }))
 
     expect(onSelect).toHaveBeenCalledWith('Nyeri', 'Nyeri')
@@ -125,7 +125,7 @@ describe('the clear button', () => {
   it('appears only when there is text, and empties the field', async () => {
     global.fetch = stubSearch()
     render(<SearchBar onSelect={vi.fn()} />)
-    const input = screen.getByRole('textbox', { name: /search for a kenyan/i })
+    const input = screen.getByRole('textbox', { name: /search a town or county/i })
 
     expect(screen.queryByRole('button', { name: /clear search/i })).not.toBeInTheDocument()
 
@@ -142,7 +142,7 @@ describe('suggestion feedback', () => {
     global.fetch = stubSearch({ delay: 400 })
     render(<SearchBar onSelect={vi.fn()} />)
 
-    await userEvent.type(screen.getByRole('textbox', { name: /search for a kenyan/i }), 'Nak')
+    await userEvent.type(screen.getByRole('textbox', { name: /search a town or county/i }), 'Nak')
 
     // The old behaviour showed "No Kenyan location matches" while results were
     // still loading, which reads as a dead end.
@@ -154,7 +154,7 @@ describe('suggestion feedback', () => {
     global.fetch = stubSearch({ results: [] })
     render(<SearchBar onSelect={vi.fn()} />)
 
-    await userEvent.type(screen.getByRole('textbox', { name: /search for a kenyan/i }), 'zzzz')
+    await userEvent.type(screen.getByRole('textbox', { name: /search a town or county/i }), 'zzzz')
     await waitFor(() =>
       expect(screen.getByText(/no kenyan location matches/i)).toBeInTheDocument(),
     )

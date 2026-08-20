@@ -110,7 +110,7 @@ describe('first run', () => {
   it('invites a search and offers starting points', async () => {
     global.fetch = stubFetch()
     render(<App />)
-    expect(screen.getByRole('heading', { level: 1, name: /anga/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: /read the kenyan sky/i })).toBeInTheDocument()
     expect(await screen.findByRole('button', { name: 'Kakamega' })).toBeInTheDocument()
   })
 
@@ -122,6 +122,72 @@ describe('first run', () => {
     expect(
       fetchMock.mock.calls.filter(([u]) => String(u).includes('/api/weather/')),
     ).toHaveLength(0)
+  })
+})
+
+describe('the landing design', () => {
+  it('uses the photographic sky, and switches to the reactive one after a search', async () => {
+    global.fetch = stubFetch()
+    render(<App />)
+
+    // Before a location: the photograph.
+    expect(await screen.findByTestId('backdrop')).toHaveAttribute('data-effect', 'photo')
+
+    await openDashboard()
+
+    // After: the weather drives the sky again.
+    expect(screen.getByTestId('backdrop')).not.toHaveAttribute('data-effect', 'photo')
+  })
+
+  it('asks what the weather is, not what to wear', async () => {
+    global.fetch = stubFetch()
+    render(<App />)
+
+    expect(await screen.findByText(/what is the weather today/i)).toBeInTheDocument()
+    expect(screen.queryByText(/what should i wear/i)).not.toBeInTheDocument()
+  })
+
+  it('shows the display headline and the eyebrow', async () => {
+    global.fetch = stubFetch()
+    render(<App />)
+
+    expect(screen.getByRole('heading', { level: 1, name: /read the kenyan sky/i })).toBeInTheDocument()
+    expect(screen.getByText(/swahili for sky/i)).toBeInTheDocument()
+  })
+
+  it('shows no weather reading before anything is searched', async () => {
+    // The design's "right now over Nairobi" card is deliberately omitted: it
+    // would mean an upstream call on every landing view.
+    const fetchMock = stubFetch()
+    global.fetch = fetchMock
+    render(<App />)
+    await screen.findByRole('button', { name: 'Kakamega' })
+
+    expect(screen.queryByText(/right now over/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: /current conditions/i })).not.toBeInTheDocument()
+    expect(
+      fetchMock.mock.calls.filter(([u]) => String(u).includes('/api/weather/')),
+    ).toHaveLength(0)
+  })
+
+  it('offers the three feature panels', async () => {
+    global.fetch = stubFetch()
+    render(<App />)
+
+    for (const title of ['Hour by hour', 'The sky reacts', 'Fast and honest']) {
+      expect(screen.getByRole('heading', { name: title })).toBeInTheDocument()
+    }
+  })
+
+  it('gives the two search fields distinct accessible names', async () => {
+    // The landing renders one in the masthead and one in the hero; identical
+    // names would leave a screen reader announcing two indistinguishable
+    // comboboxes.
+    global.fetch = stubFetch()
+    render(<App />)
+
+    expect(screen.getByRole('textbox', { name: /town, county or region/i })).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: /^search a town or county$/i })).toBeInTheDocument()
   })
 })
 
@@ -228,7 +294,7 @@ describe('dashboard', () => {
     await openDashboard()
 
     await userEvent.click(screen.getByRole('button', { name: /search locations/i }))
-    expect(await screen.findByRole('heading', { level: 1, name: /anga/i })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: /read the kenyan sky/i })).toBeInTheDocument()
   })
 })
 
@@ -513,7 +579,7 @@ describe('search', () => {
     render(<App />)
 
     await userEvent.type(
-      screen.getByRole('textbox', { name: /search for a kenyan/i }), 'mom',
+      screen.getByRole('textbox', { name: /town, county or region/i }), 'mom',
     )
     await userEvent.click(await screen.findByRole('option', { name: /mombasa/i }))
 
@@ -529,7 +595,7 @@ describe('search', () => {
     global.fetch = fetchMock
     render(<App />)
 
-    await userEvent.type(screen.getByRole('textbox', { name: /search for a kenyan/i }), 'ka')
+    await userEvent.type(screen.getByRole('textbox', { name: /town, county or region/i }), 'ka')
     await screen.findByRole('option', { name: /kakamega/i })
     await userEvent.keyboard('{ArrowDown}{ArrowDown}{Enter}')
 
@@ -544,7 +610,7 @@ describe('search', () => {
     global.fetch = fetchMock
     render(<App />)
 
-    await userEvent.type(screen.getByRole('textbox', { name: /search for a kenyan/i }), 'nak')
+    await userEvent.type(screen.getByRole('textbox', { name: /town, county or region/i }), 'nak')
     await screen.findByRole('listbox')
 
     expect(
@@ -555,7 +621,7 @@ describe('search', () => {
   it('reports when nothing matches', async () => {
     global.fetch = stubFetch({ locations: { query: 'zz', count: 0, results: [] } })
     render(<App />)
-    await userEvent.type(screen.getByRole('textbox', { name: /search for a kenyan/i }), 'zzzz')
+    await userEvent.type(screen.getByRole('textbox', { name: /town, county or region/i }), 'zzzz')
     expect(await screen.findByText(/no kenyan location matches/i)).toBeInTheDocument()
   })
 })

@@ -26,7 +26,7 @@ html {
 
 body {
   margin: 0;
-  background: #10171f;
+  background: #1A1016;
   color: var(--ink);
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
@@ -38,8 +38,14 @@ body {
 }
 
 :root {
-  --font-display: 'Instrument Serif', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
-  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Playfair Display for the high-contrast display voice, Outfit for the
+     geometric single-storey-a UI face. */
+  --font-display: 'Playfair Display', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  --font-ui: 'Outfit', 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Warm dusk accents lifted from the hero photograph. */
+  --amber: #F0AC6A;
+  --amber-soft: #F6C68F;
 
   /* Text sits on a scrimmed sky, so a single near-white ramp works on every
      weather state and keeps body copy above 4.5:1 throughout. */
@@ -54,7 +60,7 @@ body {
   --radius: 14px;
   --radius-sm: 10px;
 
-  --shell-max: 62rem;
+  --shell-max: 69rem;
   --gutter: clamp(1.1rem, 4vw, 2.5rem);
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
 }
@@ -155,6 +161,29 @@ body {
   flex: 1 1 18rem;
   max-width: 24rem;
   margin-left: auto;
+}
+
+.search--hero {
+  flex: none;
+  max-width: none;
+  margin-left: 0;
+  width: 100%;
+}
+
+.search--hero .search__field {
+  padding: 0.55rem 0.6rem 0.55rem 1.15rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.search--hero input {
+  font-size: 1.02rem;
+}
+
+.search--hero .search__go {
+  min-width: 5.4rem;
+  padding: 0.6rem 1rem;
+  border-radius: 999px;
 }
 
 .search__field {
@@ -431,97 +460,97 @@ body {
   opacity: 0.85;
 }
 
-/* --- Welcome ------------------------------------------------------------ */
-/* The first impression. Sized and spaced like a cover, not a form. */
+/* --- Home ---------------------------------------------------------------
+   Laid out to the supplied design. The reference sits on a ~1104px measure at
+   1440px wide, hence the wider shell; the display line is set large enough to
+   carry the page on its own, since the hero card was removed.
+   ------------------------------------------------------------------------ */
 
-.welcome {
+.home {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(3rem, 9vh, 6.5rem);
   flex: 1;
+}
+
+.home__hero {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 1.35rem;
+  /* The words occupy the left of the frame; the cumulus stays visible right. */
   max-width: 40rem;
-  padding-block: clamp(1rem, 5vh, 3.5rem);
+  padding-top: clamp(1rem, 6vh, 4.5rem);
 }
 
-.welcome__mark {
-  display: flex;
-}
-
-.welcome__mark .logo {
-  border-radius: 17px;
-  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.38);
-}
-
-.welcome__title {
-  font-family: var(--font-display);
-  font-size: clamp(3.6rem, 13vw, 6.5rem);
-  line-height: 0.94;
-  letter-spacing: -0.03em;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-/* The translation is the hook: it explains the name without a paragraph. */
-.welcome__meaning {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  font-family: var(--font-ui);
-  font-size: 0.8rem;
+.home__eyebrow {
+  margin: 0 0 1.1rem;
+  font-size: 0.72rem;
   font-weight: 400;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--ink-faint);
 }
 
-.welcome__meaning em {
-  font-style: italic;
-  color: #F3C98A;
-  text-transform: none;
-  letter-spacing: 0.04em;
-  font-size: 0.92rem;
-}
-
-.welcome__meaning-line {
-  width: 2.2rem;
-  height: 1px;
-  background: linear-gradient(90deg, rgba(243, 201, 138, 0.9), transparent);
-  flex: none;
-}
-
-.welcome__lede {
+.home__title {
   margin: 0;
-  font-size: clamp(1rem, 2.6vw, 1.2rem);
-  line-height: 1.6;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(3rem, 8.2vw, 7.4rem);
+  line-height: 0.97;
+  letter-spacing: -0.018em;
+  display: flex;
+  flex-direction: column;
+}
+
+.home__title-line {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+/* The warm second line, picked from the sunlit cloud in the photograph. */
+.home__title-line--accent {
+  color: var(--amber);
+}
+
+.home__lede {
+  margin: 1.6rem 0 0;
+  max-width: 27rem;
+  font-size: clamp(0.98rem, 1.25vw, 1.06rem);
+  line-height: 1.62;
   color: var(--ink-muted);
+}
+
+.home__search {
+  margin-top: 2.1rem;
   max-width: 32rem;
 }
 
-.welcome__starters-label {
-  margin: 0 0 0.65rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.11em;
+.home__starters {
+  margin-top: 1.9rem;
+}
+
+.home__label {
+  margin: 0 0 0.8rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--ink-faint);
 }
 
-.welcome__chips {
+.home__chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.55rem;
 }
 
 .chip {
-  padding: 0.5rem 0.95rem;
+  padding: 0.6rem 1.1rem;
   border-radius: 999px;
-  border: 1px solid var(--hairline);
-  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.07);
   color: var(--ink);
   font: inherit;
   font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
   backdrop-filter: blur(10px);
   transition: background 0.18s var(--ease), border-color 0.18s var(--ease),
@@ -529,39 +558,49 @@ body {
 }
 
 .chip:hover {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(243, 201, 138, 0.5);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(240, 172, 106, 0.55);
   transform: translateY(-1px);
 }
 
-.welcome__points {
-  list-style: none;
-  margin: 0.35rem 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  border-top: 1px solid var(--hairline);
-  padding-top: 1.25rem;
+/* --- Feature panels ----------------------------------------------------- */
+
+.home__features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  overflow: hidden;
 }
 
-.welcome__points li {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.7rem;
-  font-size: 0.9rem;
+.feature {
+  padding: 1.6rem 1.75rem;
+  /* Hairline dividers between, none on the outside. */
+  border-left: 1px solid rgba(255, 255, 255, 0.11);
+}
+
+.feature:first-child {
+  border-left: none;
+}
+
+.feature__title {
+  margin: 0 0 0.7rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.32rem;
+  letter-spacing: -0.005em;
+}
+
+.feature__body {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
   color: var(--ink-muted);
-  line-height: 1.45;
 }
 
-.welcome__point-icon {
-  flex: none;
-  margin-top: 0.1rem;
-  color: #F3C98A;
-  opacity: 0.9;
-}
-
-/* --- States ------------------------------------------------------------ */
+/* --- States ------/* --- States ------------------------------------------------------------ */
 
 .state {
   flex: 1;
@@ -745,6 +784,33 @@ body {
     align-items: stretch;
   }
 
+  /* The hero spans the frame in portrait, so the photo scrim widens to match
+     (see backdrop.css). */
+  .home__hero {
+    max-width: none;
+    padding-top: 0.5rem;
+  }
+
+  .home__search,
+  .home__lede {
+    max-width: none;
+  }
+
+  /* Three columns become one stack; the dividers move from left to top. */
+  .home__features {
+    grid-template-columns: 1fr;
+  }
+
+  .feature {
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.11);
+    padding: 1.3rem 1.35rem;
+  }
+
+  .feature:first-child {
+    border-top: none;
+  }
+
   .search {
     margin-left: 0;
     max-width: none;
@@ -756,6 +822,28 @@ body {
 @media (max-width: 34rem) {
   .shell {
     gap: 1.5rem;
+  }
+
+  .home {
+    gap: 2.5rem;
+  }
+
+  .home__title {
+    /* 12.5vw keeps the two lines commanding without overflowing 320px. */
+    font-size: clamp(2.6rem, 12.5vw, 4rem);
+  }
+
+  .home__eyebrow {
+    letter-spacing: 0.18em;
+  }
+
+  .home__lede {
+    margin-top: 1.2rem;
+  }
+
+  .chip {
+    padding: 0.55rem 0.95rem;
+    font-size: 0.85rem;
   }
 
   .brand__mark {
@@ -787,6 +875,10 @@ body {
 
 /* --- Small phones ------------------------------------------------------- */
 @media (max-width: 22.5rem) {
+  .home__title {
+    font-size: 2.4rem;
+  }
+
   .brand__tag {
     /* At 320px the wordmark alone carries the branding. */
     display: none;

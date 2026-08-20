@@ -19,6 +19,73 @@
   inset: 0;
 }
 
+/* --- Photographic sky (landing) ------------------------------------------ */
+/* Mount Kenya at dusk. It drifts rather than sitting still, because a
+   photograph of a sky that does not move reads as a poster; a slow pan reads as
+   weather. Transform-only and GPU-composited, so the cost is a layer, not a
+   repaint. */
+
+.backdrop__photo {
+  background-image: url('../assets/anga-hero.jpg');
+  background-size: cover;
+  background-position: 62% 42%;
+  background-repeat: no-repeat;
+  /* Always above 1 so the drift never exposes an edge. */
+  transform: scale(1.08);
+  animation: sky-drift 80s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes sky-drift {
+  from {
+    transform: scale(1.08) translate3d(-1.4%, 0.8%, 0);
+  }
+  to {
+    transform: scale(1.16) translate3d(1.6%, -1.2%, 0);
+  }
+}
+
+/* The photograph's own scrim.
+ *
+ * Measured, not guessed: the brightest pixel falling under text is a sunlit
+ * cloud at luminance 0.84, which needs alpha 0.66 to carry --ink-muted past
+ * 4.5:1. A flat 0.66 everywhere would flatten the photograph, so the weight is
+ * pushed left where the words are and lifted on the right where the cumulus
+ * should stay visible. */
+.backdrop__photo-scrim {
+  background:
+    linear-gradient(
+      100deg,
+      rgba(22, 14, 18, 0.86) 0%,
+      rgba(22, 14, 18, 0.74) 45%,
+      rgba(22, 14, 18, 0.44) 70%,
+      rgba(22, 14, 18, 0.3) 100%
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(22, 14, 18, 0.25) 0%,
+      rgba(22, 14, 18, 0.05) 35%,
+      rgba(22, 14, 18, 0.28) 100%
+    );
+}
+
+@media (max-width: 48rem) {
+  /* Portrait: text spans the full width, so the veil has to as well. */
+  .backdrop__photo-scrim {
+    background:
+      linear-gradient(
+        to bottom,
+        rgba(22, 14, 18, 0.82) 0%,
+        rgba(22, 14, 18, 0.72) 45%,
+        rgba(22, 14, 18, 0.78) 100%
+      );
+  }
+
+  .backdrop__photo {
+    background-position: 66% 38%;
+  }
+}
+
 /* --- Sky ---------------------------------------------------------------- */
 
 .backdrop__sky {
@@ -255,6 +322,12 @@
   .star,
   .backdrop__lightning {
     animation: none !important;
+  }
+
+  /* Hold the photograph still, but keep the scale so framing is unchanged. */
+  .backdrop__photo {
+    animation: none !important;
+    transform: scale(1.08);
   }
 
   .backdrop__lightning {
