@@ -82,7 +82,18 @@ MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
+    # Required for X_FRAME_OPTIONS below to actually be emitted; the setting
+    # alone does nothing without this middleware.
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+# security.W003 warns that CsrfViewMiddleware is absent. That is deliberate and
+# safe here: this service exposes only GET/OPTIONS (see CORS_ALLOW_METHODS and
+# the views, which implement no unsafe methods), has no sessions, no cookies,
+# no authentication and no state-changing endpoint. There is no ambient
+# credential for a cross-site request to abuse, so CSRF protection would guard
+# nothing. Silenced explicitly rather than left as an unexplained warning.
+SILENCED_SYSTEM_CHECKS = ["security.W003"]
 
 TEMPLATES = [
     {

@@ -1,0 +1,97 @@
+import { useMemo } from 'react'
+
+import {
+  EFFECT_CLOUDS,
+  EFFECT_FOG,
+  EFFECT_RAIN,
+  EFFECT_STARS,
+  EFFECT_STORM,
+  EFFECT_SUN,
+  themeToCssVars,
+} from '../../lib/weatherTheme'
+import RainCanvas from './RainCanvas'
+
+/**
+ * The atmosphere behind everything.
+ *
+ * Layer order, back to front:
+ *   1. sky gradient      - from the theme's three stops
+ *   2. glow              - sun warmth, moonlight, or storm light
+ *   3. effect layer      - clouds / stars / rain / fog
+ *   4. scrim             - a fixed dark wash that guarantees text contrast on
+ *                          every sky, bright noon included
+ *
+ * All decorative, so the whole thing is aria-hidden. The weather is conveyed
+ * in text by the components above it, not by these visuals alone.
+ */
+export default function Backdrop({ theme }) {
+  const style = useMemo(() => themeToCssVars(theme), [theme])
+
+  const showClouds = theme.effect === EFFECT_CLOUDS || theme.effect === EFFECT_STORM
+  const showRain = theme.effect === EFFECT_RAIN || theme.effect === EFFECT_STORM
+  const isStorm = theme.effect === EFFECT_STORM
+
+  return (
+    <div
+      className={`backdrop backdrop--${theme.group} ${theme.isDay ? 'is-day' : 'is-night'}`}
+      style={style}
+      aria-hidden="true"
+      data-testid="backdrop"
+      data-effect={theme.effect}
+      data-intensity={theme.intensity}
+    >
+      <div className="backdrop__sky" />
+      <div className="backdrop__glow" />
+
+      {theme.effect === EFFECT_SUN && <div className="backdrop__sun" />}
+      {theme.effect === EFFECT_STARS && <Stars />}
+      {theme.effect === EFFECT_FOG && <div className="backdrop__fog" />}
+
+      {showClouds && (
+        <div className="backdrop__clouds">
+          <span className="cloud cloud--a" />
+          <span className="cloud cloud--b" />
+          <span className="cloud cloud--c" />
+        </div>
+      )}
+
+      {showRain && <RainCanvas dropCount={theme.rainDrops} stormy={isStorm} />}
+      {isStorm && <div className="backdrop__lightning" />}
+
+      <div className="backdrop__scrim" />
+    </div>
+  )
+}
+
+/**
+ * A fixed star field. Positions are deterministic rather than random so the
+ * sky does not reshuffle on every re-render, which reads as flicker.
+ */
+const STAR_SEEDS = [
+  [8, 14, 1.6, 0], [17, 32, 1.1, 1.4], [24, 9, 1.9, 0.7], [31, 41, 1.2, 2.1],
+  [39, 18, 1.5, 0.3], [46, 6, 1.0, 1.8], [52, 28, 1.7, 1.1], [58, 47, 1.2, 2.6],
+  [63, 12, 1.4, 0.5], [69, 35, 1.8, 1.6], [74, 21, 1.1, 2.3], [81, 8, 1.6, 0.9],
+  [86, 39, 1.3, 1.9], [91, 17, 1.5, 0.2], [95, 30, 1.1, 2.8], [12, 45, 1.3, 1.2],
+  [35, 52, 1.0, 0.6], [55, 15, 1.2, 2.4], [78, 50, 1.4, 1.5], [4, 27, 1.2, 2.0],
+]
+
+function Stars() {
+  return (
+    <div className="backdrop__stars">
+      <span className="moon" />
+      {STAR_SEEDS.map(([left, top, size, delay], index) => (
+        <span
+          key={index}
+          className="star"
+          style={{
+            left: `${left}%`,
+            top: `${top}%`,
+            width: `${size}px`,
+            height: `${size}px`,
+            animationDelay: `${delay}s`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}

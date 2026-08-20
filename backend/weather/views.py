@@ -118,9 +118,19 @@ class StatsView(APIView):
     def get(self, request):
         counters = metrics.snapshot()
 
-        hits = counters["cache_hit_fresh"] + counters["coalesce_follower_served"]
-        served = hits + counters["cache_miss"] + counters["cache_hit_stale"]
-        hit_rate = round(hits / served, 4) if served else None
+        # Exactly one of these three fires per incoming request, so summing
+        # them gives the request count without double-counting. (Coalescing
+        # counters must NOT be added here: a follower already incremented
+        # cache_miss on its way in.)
+        served = (
+            counters["cache_hit_fresh"] + counters["cache_hit_stale"] + counters["cache_miss"]
+        )
+        upstream = counters["upstream_request"]
+        avoided = max(0, served - upstream)
+
+        # The number that actually matters: the share of user requests that did
+        # not become a Weather-AI request.
+        hit_rate = round(avoided / served, 4) if served else None
 
         quota_state = quota.get_quota()
         breaker = quota.breaker_state()
@@ -129,10 +139,10 @@ class StatsView(APIView):
             {
                 "counters": counters,
                 "derived": {
+                    "requests_served": served,
+                    "upstream_requests_made": upstream,
+                    "upstream_requests_avoided": avoided,
                     "cache_hit_rate": hit_rate,
-                    "upstream_requests_avoided": max(
-                        0, served - counters["upstream_request"]
-                    ),
                 },
                 "config": {
                     "cache_backend": settings.CACHE_BACKEND_NAME,

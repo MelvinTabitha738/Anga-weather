@@ -1,0 +1,92 @@
+# Render blueprint for the Anga backend.
+#
+# Provisions three things: the Django service, PostgreSQL for the Kenya
+# gazetteer, and a Key Value (Redis) instance for the weather cache and the
+# single-flight locks.
+#
+# Deploy: Render dashboard -> New -> Blueprint -> point at this repository.
+#
+# Secrets are NOT in this file. Anything marked `sync: false` must be entered
+# in the Render dashboard after the first deploy - see the README.
+
+services:
+  - type: web
+    name: anga-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: ./build.sh
+    # Threads matter here: a request coalescing "follower" briefly blocks while
+    # waiting for the leader's upstream result, so threaded workers let one
+    # instance absorb a burst on the same location. See the README trade-offs.
+    startCommand: gunicorn anga.wsgi:application --workers 2 --threads 4 --timeout 60 --access-logfile -
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+
+      # Generated once by Render and kept out of the repository.
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+
+      - key: DEBUG
+        value: "False"
+
+      # The Weather-AI key. Set this in the dashboard; never commit it.
+      - key: WEATHER_AI_API_KEY
+        sync: false
+      - key: WEATHER_AI_BASE_URL
+        value: https://api.weather-ai.co
+
+      # Exact origin(s) of the deployed frontend, comma-separated.
+      # e.g. https://anga.vercel.app
+      - key: FRONTEND_ORIGINS
+        sync: false
+      # Optional: also allow that Vercel project's preview deployments.
+      - key: VERCEL_PROJECT_SLUG
+        sync: false
+
+      - key: DATABASE_URL
+        fromDatabase:
+          name: anga-db
+          property: connectionString
+
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: anga-cache
+          property: connectionString
+
+      # --- Caching policy. See the README for the reasoning behind these. ---
+      # 30 minutes fresh: the free tier allows 1,000 requests per MONTH.
+      - key: WEATHER_CACHE_TTL
+        value: "1800"
+      # 6 hours stale retention: a 429 here is a monthly quota lockout that
+      # clears at X-RateLimit-Reset, so a short stale window would be useless.
+      - key: WEATHER_STALE_TTL
+        value: "21600"
+      - key: WEATHER_QUOTA_RESERVE
+        value: "25"
+      - key: WEATHER_COALESCE_WAIT
+        value: "12"
+      - key: LOG_LEVEL
+        value: INFO
+
+  # Render's managed Redis is called "Key Value". On older Render accounts this
+  # type is still named `redis`; if the blueprint is rejected, change both this
+  # `type` and the `fromService.type` above to `redis`.
+  - type: keyvalue
+    name: anga-cache
+    plan: free
+    # No public access: only services in this Render account may connect.
+    ipAllowList: []
+    # The cache is a performance layer, not a source of truth. Evicting the
+    # least-recently-used key under pressure is correct here - losing a cached
+    # reading costs one upstream request, and locks are short-lived anyway.
+    maxmemoryPolicy: allkeys-lru
+
+databases:
+  - name: anga-db
+    plan: free
+    databaseName: anga
+    user: anga

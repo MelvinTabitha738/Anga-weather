@@ -199,6 +199,23 @@ class StatsEndpointTests(WeatherTestCase):
         self.assertNotIn("wai_", raw)
         self.assertNotIn("secret", raw)
 
+    def test_derived_totals_count_each_request_once(self):
+        """Regression: a coalescing follower increments cache_miss AND
+        coalesce_follower_served, so summing both inflated the request count
+        and reported more upstream calls avoided than requests received."""
+        fake = FakeClient()
+        with mock.patch("weather.service.get_client", return_value=fake):
+            for _ in range(4):
+                self.client.get(reverse("weather"), {"location": "Nairobi"})
+
+        derived = self.client.get(reverse("meta-stats")).json()["derived"]
+
+        self.assertEqual(derived["requests_served"], 4)
+        self.assertEqual(derived["upstream_requests_made"], 1)
+        self.assertEqual(derived["upstream_requests_avoided"], 3)
+        self.assertLessEqual(derived["upstream_requests_avoided"], derived["requests_served"])
+        self.assertEqual(derived["cache_hit_rate"], 0.75)
+
     def test_stats_report_breaker_state(self):
         quota.open_breaker(quota.REASON_RATE_LIMITED, seconds=120)
         body = self.client.get(reverse("meta-stats")).json()
