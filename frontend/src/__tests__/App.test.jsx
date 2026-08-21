@@ -215,6 +215,17 @@ describe('the landing design', () => {
     expect(screen.queryByText(/twelve-hour/i)).not.toBeInTheDocument()
   })
 
+  it('marks which view is showing, so the layout can respond', async () => {
+    // CSS uses this to drop the duplicate masthead search on a phone.
+    global.fetch = stubFetch()
+    const { container } = render(<App />)
+    await screen.findByRole('button', { name: 'Kakamega' })
+    expect(container.querySelector('.shell')).toHaveAttribute('data-view', 'home')
+
+    await openDashboard()
+    expect(container.querySelector('.shell')).toHaveAttribute('data-view', 'dashboard')
+  })
+
   it('gives the two search fields distinct accessible names', async () => {
     // The landing renders one in the masthead and one in the hero; identical
     // names would leave a screen reader announcing two indistinguishable
@@ -331,6 +342,34 @@ describe('dashboard', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /search locations/i }))
     expect(await screen.findByRole('heading', { level: 1, name: /read the kenyan sky/i })).toBeInTheDocument()
+  })
+
+  it('offers a labelled back arrow, not only the wordmark', async () => {
+    // On a phone the wordy link is hidden and this is the only way back other
+    // than the logo, which nobody should have to discover.
+    global.fetch = stubFetch()
+    render(<App />)
+    await openDashboard()
+
+    const back = screen.getByRole('button', { name: /back to search/i })
+    expect(back).toBeInTheDocument()
+
+    await userEvent.click(back)
+    expect(
+      await screen.findByRole('heading', { level: 1, name: /read the kenyan sky/i }),
+    ).toBeInTheDocument()
+  })
+
+  it('wraps the hourly strip so its scroll edge can be signalled', async () => {
+    global.fetch = stubFetch()
+    const { container } = render(<App />)
+    await openDashboard()
+
+    const viewport = container.querySelector('.hourly__viewport')
+    expect(viewport).toBeTruthy()
+    // The scroller sits inside, so the fade can be drawn without covering the
+    // scrollbar.
+    expect(viewport.querySelector('.hourly')).toBeTruthy()
   })
 })
 

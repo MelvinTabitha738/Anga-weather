@@ -64,13 +64,16 @@ export default function App() {
     <div className="app">
       <Backdrop theme={theme} photo={!selection} />
 
-      <div className="shell">
+      <div className="shell" data-view={selection ? 'dashboard' : 'home'}>
         <header className="masthead">
+          {/* Labelled "Anga home" rather than "back to search": the dashboard
+              has a dedicated back control, and two buttons announcing nearly
+              the same thing is worse than one. */}
           <button
             type="button"
             className="brand"
             onClick={clearSelection}
-            aria-label="Anga — back to search"
+            aria-label="Anga home"
           >
             <Logo size={30} className="brand__logo" />
             <span className="brand__text">

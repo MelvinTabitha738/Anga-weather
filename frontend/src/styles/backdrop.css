@@ -106,7 +106,26 @@
       rgba(56, 32, 30, 0.3);
   }
 
-  .backdrop__photo { background-position: 62% 38%; }
+  /* A phone is a quarter of the width, so the same percentage pan covers a
+     quarter of the pixels - 8.4px/s on a laptop becomes about 2.3px/s here,
+     which is back to looking still. The travel is widened to compensate.
+     
+     The scale has to rise with it, and by more than looks obvious: overhang is
+     w(s-1)/2 while travel is w*p*s, so staying inside the frame needs
+     s > 1/(1-2p). At +/-14% that is s > 1.39, so 1.5 leaves 98px of overhang
+     against 82px of travel on a 390px screen. A first attempt at 1.4 exposed
+     the edge. */
+  .backdrop__photo {
+    background-position: 62% 38%;
+    transform: scale(1.5) translate3d(-14%, 0, 0);
+    animation: sky-drift-mobile 46s ease-in-out infinite alternate;
+    animation-delay: -11s;
+  }
+
+  @keyframes sky-drift-mobile {
+    from { transform: scale(1.5) translate3d(-14%, 0, 0); }
+    to   { transform: scale(1.5) translate3d(14%, 0, 0); }
+  }
 }
 
 /* --- Sky ---------------------------------------------------------------- */

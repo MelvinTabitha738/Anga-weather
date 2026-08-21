@@ -31,8 +31,12 @@ export default function HourlyStrip({ hours, units = 'metric' }) {
         </p>
       </div>
 
-      <ol className="hourly" tabIndex={0} aria-label="Hourly forecast">
-        {hours.map((hour, index) => {
+      {/* Wrapped so the fade can sit outside the scroller: applying a mask to
+          the scroller itself would fade the scrollbar too, which is the one
+          thing that must stay visible. */}
+      <div className="hourly__viewport">
+        <ol className="hourly" tabIndex={0} aria-label="Hourly forecast">
+          {hours.map((hour, index) => {
           const rain = rainfallCell(hour.precipitation, units)
           return (
             <li className="hourly__item" key={hour.time || index}>
@@ -62,7 +66,8 @@ export default function HourlyStrip({ hours, units = 'metric' }) {
             </li>
           )
         })}
-      </ol>
+        </ol>
+      </div>
     </section>
   )
 }

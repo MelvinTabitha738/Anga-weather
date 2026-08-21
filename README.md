@@ -908,7 +908,23 @@ Verified by arithmetic across real device widths: **zero horizontal overflow fro
 | 768px | iPad portrait | 417px |
 | 1920px | Desktop | 1550px |
 
-Specific decisions: metrics go two-up on phones so all four numbers stay above the fold;
+Specific decisions on a phone: **one search field, not two** — the masthead field and the
+hero field read as one persistent control plus one focal one side by side, but stacked they
+are the same control twice, costing ~90px of scarce vertical space, so the masthead one is
+dropped on the home view and kept on the dashboard where it is the only one. The commit
+button becomes a circular icon, since the word "Search" ate most of a narrow field. A
+44px circular **back arrow** sits where a thumb expects it, because the wordmark returning
+home is not something anyone should have to discover. The hourly strip gets a permanent
+visible scrollbar and a fading right edge, since mobile browsers hide overlay scrollbars
+until you are already scrolling — useless as a hint that there is anything to scroll to.
+
+The photograph's pan is widened on phones. The same percentage covers a quarter of the
+pixels at 390px, turning 8.4 px/s into 2.3 px/s, which is back to looking still. Note the
+scale has to rise with the travel by more than looks obvious: overhang is `w(s-1)/2` while
+travel is `w·p·s`, so staying inside the frame needs `s > 1/(1-2p)`. A first attempt at
+scale 1.4 with ±15% exposed the edge.
+
+Other decisions: metrics go two-up on phones so all four numbers stay above the fold;
 the rain column stays on mobile because the legend promises it; in landscape the hero
 yields first, since height is the scarce resource. `viewport-fit=cover` is paired with
 `env(safe-area-inset-*)` so content clears the notch and home indicator, and the search

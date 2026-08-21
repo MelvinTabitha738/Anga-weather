@@ -35,8 +35,20 @@ export default function Dashboard({ data, onBack, onRefresh }) {
   return (
     <div className="dashboard">
       <div className="dashboard__bar">
-        <button type="button" className="linkback" onClick={onBack}>
+        {/* Two affordances on purpose. The circular arrow is the one a thumb
+            finds on a phone - a 44px target at the top left, where a back
+            control is expected - while the labelled link says where it goes on
+            wider screens. The wordmark also returns here, but nobody should
+            have to discover that. */}
+        <button
+          type="button"
+          className="backbutton"
+          onClick={onBack}
+          aria-label="Back to search"
+        >
           <ArrowLeft />
+        </button>
+        <button type="button" className="linkback" onClick={onBack} tabIndex={-1}>
           <span>Search locations</span>
         </button>
         <Freshness meta={meta} onRefresh={onRefresh} />
@@ -178,8 +190,8 @@ function Freshness({ meta, onRefresh }) {
 function ArrowLeft() {
   return (
     <svg
-      width="15"
-      height="15"
+      width="18"
+      height="18"
       viewBox="0 0 16 16"
       fill="none"
       stroke="currentColor"

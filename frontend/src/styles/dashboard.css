@@ -24,12 +24,39 @@
   flex-wrap: wrap;
 }
 
+/* The primary back control: a real 44px target where a thumb expects one. */
+.backbutton {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-left: -0.35rem;
+  border-radius: 50%;
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: background 0.18s var(--ease), transform 0.18s var(--ease);
+}
+
+.backbutton:hover {
+  background: var(--surface-strong);
+  transform: translateX(-2px);
+}
+
+.dashboard__bar {
+  gap: 0.6rem;
+}
+
 .linkback {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
   padding: 0.4rem 0.7rem 0.4rem 0.5rem;
-  margin-left: -0.5rem;
+  margin-right: auto;
   background: none;
   border: none;
   border-radius: var(--radius-sm);
@@ -211,6 +238,23 @@
 
 /* --- Hourly strip ------------------------------------------------------- */
 
+/* Fades the right edge so it is obvious there is more beyond the last visible
+   column. Sits outside the scroller so the scrollbar itself is never faded. */
+.hourly__viewport {
+  position: relative;
+}
+
+.hourly__viewport::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0.75rem;
+  width: 2.5rem;
+  pointer-events: none;
+  background: linear-gradient(to right, transparent, rgba(20, 12, 16, 0.55));
+}
+
 .hourly {
   list-style: none;
   margin: 0;
@@ -220,17 +264,30 @@
   /* Wide content scrolls inside its own container; the page never does. */
   overflow-x: auto;
   scroll-snap-type: x proximity;
+  /* A visible, permanent track. Mobile browsers hide overlay scrollbars until
+     you are already scrolling, which is useless as a hint that there is
+     anything to scroll to. */
   scrollbar-width: thin;
-  scrollbar-color: var(--surface-strong) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.45) rgba(255, 255, 255, 0.12);
+  -webkit-overflow-scrolling: touch;
 }
 
 .hourly::-webkit-scrollbar {
-  height: 6px;
+  height: 8px;
+}
+
+.hourly::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
 }
 
 .hourly::-webkit-scrollbar-thumb {
-  background: var(--surface-strong);
+  background: rgba(255, 255, 255, 0.45);
   border-radius: 999px;
+}
+
+.hourly::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.62);
 }
 
 .hourly__item {
@@ -396,6 +453,30 @@
 @media (max-width: 34rem) {
   .dashboard {
     gap: 1.5rem;
+  }
+
+  /* The circular arrow carries the meaning on a phone; the wordy version is
+     redundant beside it and pushes the freshness line onto a second row. */
+  .linkback {
+    display: none;
+  }
+
+  .dashboard__bar {
+    gap: 0.75rem;
+  }
+
+  /* Wider columns and a taller scrollbar: both are thumb targets here. */
+  .hourly__item {
+    width: 4.2rem;
+    padding: 0.7rem 0.35rem;
+  }
+
+  .hourly::-webkit-scrollbar {
+    height: 10px;
+  }
+
+  .hourly__viewport::after {
+    width: 1.75rem;
   }
 
   /* Two columns beat one tall stack: all four numbers stay above the fold. */

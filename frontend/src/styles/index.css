@@ -806,6 +806,18 @@ body {
     align-items: stretch;
   }
 
+  /* One search field, not two.
+   *
+   * On a wide screen the masthead field and the hero field sit side by side
+   * and read as one persistent control plus one focal one. Stacked on a phone
+   * they are simply the same control twice, costing about 90px of the little
+   * vertical space there is - and the hero field is the one the layout is
+   * built around. So on the home view the masthead field goes; on the
+   * dashboard it stays, because there it is the only one. */
+  [data-view='home'] .masthead .search--compact {
+    display: none;
+  }
+
   /* The hero spans the frame in portrait, so the photo scrim widens to match
      (see backdrop.css). */
   .home__hero {
@@ -844,6 +856,29 @@ body {
 @media (max-width: 34rem) {
   .shell {
     gap: 1.5rem;
+  }
+
+  /* The word "Search" eats most of a narrow field; the icon says the same
+     thing in a quarter of the width. */
+  .search__go-text {
+    display: none;
+  }
+
+  .search__go {
+    min-width: 0;
+    width: 2.6rem;
+    height: 2.6rem;
+    padding: 0;
+    border-radius: 50%;
+  }
+
+  .search--hero .search__go {
+    width: 2.9rem;
+    height: 2.9rem;
+  }
+
+  .search__field {
+    padding-right: 0.4rem;
   }
 
   .home {
@@ -932,7 +967,7 @@ body {
 
   .search__clear {
     padding: 0.5rem;
-    margin-right: -0.25rem;
+    margin-right: 0;
   }
 
   .linkback {

@@ -179,7 +179,17 @@ export default function SearchBar({ onSelect, currentLabel, variant = 'compact',
           disabled={!trimmed}
           aria-label="Search"
         >
-          {isSearching && trimmed ? <Spinner /> : <span>Search</span>}
+          {isSearching && trimmed ? (
+            <Spinner />
+          ) : (
+            <>
+              {/* The word is hidden on narrow screens (see index.css) where a
+                  five-character label eats most of the field. The icon keeps
+                  the affordance without the width. */}
+              <SearchIcon className="search__go-icon" />
+              <span className="search__go-text">Search</span>
+            </>
+          )}
         </button>
       </div>
 
@@ -220,10 +230,10 @@ export default function SearchBar({ onSelect, currentLabel, variant = 'compact',
   )
 }
 
-function SearchIcon() {
+function SearchIcon({ className = 'search__icon' }) {
   return (
     <svg
-      className="search__icon"
+      className={className}
       width="16"
       height="16"
       viewBox="0 0 16 16"
