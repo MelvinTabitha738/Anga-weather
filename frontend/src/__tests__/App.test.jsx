@@ -174,9 +174,22 @@ describe('the landing design', () => {
     global.fetch = stubFetch()
     render(<App />)
 
-    for (const title of ['Hour by hour', 'The sky reacts', 'Fast and honest']) {
+    for (const title of [
+      '24 hours, then 7 days',
+      'The page becomes the weather',
+      'Never guesses how fresh it is',
+    ]) {
       expect(screen.getByRole('heading', { name: title })).toBeInTheDocument()
     }
+  })
+
+  it('describes the forecast length the app actually renders', async () => {
+    // The earlier copy said "a twelve-hour ribbon" while the adapter caps
+    // HOURLY_WINDOW at 24. Marketing copy is still a claim about behaviour.
+    global.fetch = stubFetch()
+    render(<App />)
+    expect(screen.getByRole('heading', { name: /24 hours, then 7 days/i })).toBeInTheDocument()
+    expect(screen.queryByText(/twelve-hour/i)).not.toBeInTheDocument()
   })
 
   it('gives the two search fields distinct accessible names', async () => {

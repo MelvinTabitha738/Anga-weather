@@ -49,6 +49,13 @@ export default function Backdrop({ theme, photo = false }) {
         data-intensity="none"
       >
         <div className="backdrop__photo" />
+        {/* The clouds, not the frame. Faint wisps cross the sky while the
+            photograph itself barely moves, so the mountains stay put. */}
+        <div className="backdrop__wisps">
+          <span className="wisp wisp--a" />
+          <span className="wisp wisp--b" />
+          <span className="wisp wisp--c" />
+        </div>
         <div className="backdrop__photo-scrim" />
       </div>
     )

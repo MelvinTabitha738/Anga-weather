@@ -469,7 +469,7 @@ body {
 .home {
   display: flex;
   flex-direction: column;
-  gap: clamp(3rem, 9vh, 6.5rem);
+  gap: clamp(2.25rem, 7vh, 5rem);
   flex: 1;
 }
 
@@ -478,23 +478,26 @@ body {
   flex-direction: column;
   /* The words occupy the left of the frame; the cumulus stays visible right. */
   max-width: 40rem;
-  padding-top: clamp(1rem, 6vh, 4.5rem);
+  padding-top: clamp(0.5rem, 3vh, 2rem);
 }
 
 .home__eyebrow {
-  margin: 0 0 1.1rem;
+  margin: 0 0 clamp(0.6rem, 1.6vh, 1.1rem);
+  color: var(--ink-muted);
   font-size: 0.72rem;
   font-weight: 400;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--ink-faint);
 }
 
 .home__title {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: clamp(3rem, 8.2vw, 7.4rem);
+  /* Bounded by viewport HEIGHT as well as width. Sized on width alone, the
+     two display lines pushed "Start somewhere" and the town chips below the
+     fold on a laptop - and those are the controls that make the page usable. */
+  font-size: clamp(2.4rem, min(7.6vw, 10.5vh), 6.2rem);
   line-height: 0.97;
   letter-spacing: -0.018em;
   display: flex;
@@ -512,20 +515,22 @@ body {
 }
 
 .home__lede {
-  margin: 1.6rem 0 0;
+  margin: clamp(0.9rem, 2.2vh, 1.5rem) 0 0;
   max-width: 27rem;
-  font-size: clamp(0.98rem, 1.25vw, 1.06rem);
-  line-height: 1.62;
-  color: var(--ink-muted);
+  font-size: clamp(0.95rem, 1.2vw, 1.04rem);
+  line-height: 1.58;
+  /* Full-strength ink rather than muted: this is primary copy, and it also
+     buys contrast headroom over the brightest part of the photograph. */
+  color: var(--ink);
 }
 
 .home__search {
-  margin-top: 2.1rem;
+  margin-top: clamp(1.1rem, 2.8vh, 1.9rem);
   max-width: 32rem;
 }
 
 .home__starters {
-  margin-top: 1.9rem;
+  margin-top: clamp(1rem, 2.4vh, 1.6rem);
 }
 
 .home__label {

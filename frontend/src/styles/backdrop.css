@@ -28,62 +28,131 @@
 .backdrop__photo {
   background-image: url('../assets/anga-hero.jpg');
   background-size: cover;
-  background-position: 62% 42%;
+  background-position: 58% 45%;
   background-repeat: no-repeat;
-  /* Always above 1 so the drift never exposes an edge. */
-  transform: scale(1.08);
-  animation: sky-drift 80s ease-in-out infinite alternate;
+  /* Held at a constant scale. Zooming makes the mountains breathe, which the
+     eye reads as the whole frame lurching. Only the position drifts, and only
+     slightly - the sky does the moving, the land stays put. */
+  transform: scale(1.1) translate3d(-1.6%, 0.5%, 0);
+  animation: sky-drift 64s ease-in-out infinite alternate;
   will-change: transform;
 }
 
 @keyframes sky-drift {
-  from {
-    transform: scale(1.08) translate3d(-1.4%, 0.8%, 0);
-  }
-  to {
-    transform: scale(1.16) translate3d(1.6%, -1.2%, 0);
-  }
+  from { transform: scale(1.1) translate3d(-1.6%, 0.5%, 0); }
+  to   { transform: scale(1.1) translate3d(1.6%, -0.5%, 0); }
 }
 
-/* The photograph's own scrim.
+/* Soft wisps crossing the sky.
  *
- * Measured, not guessed: the brightest pixel falling under text is a sunlit
- * cloud at luminance 0.84, which needs alpha 0.66 to carry --ink-muted past
- * 4.5:1. A flat 0.66 everywhere would flatten the photograph, so the weight is
- * pushed left where the words are and lifted on the right where the cumulus
- * should stay visible. */
+ * This is what actually reads as "the clouds are moving". Drifting the whole
+ * photograph moves the mountains too, which is noticeable and slightly
+ * seasick; a few blurred, barely-there highlights crossing the upper frame
+ * read as cloud passing in front of cloud.
+ *
+ * Deliberately faint (6-9% white) and slow (110-170s). At that weight they are
+ * felt rather than watched, which is the point - a background that draws the
+ * eye is a background doing its job badly.
+ */
+.backdrop__wisps {
+  overflow: hidden;
+}
+
+.wisp {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at 45% 50%,
+    rgba(255, 236, 214, 0.5) 0%,
+    rgba(255, 226, 198, 0.22) 42%,
+    transparent 72%
+  );
+  filter: blur(46px);
+  will-change: transform;
+}
+
+.wisp--a {
+  width: 62vw;
+  height: 20vh;
+  top: 8%;
+  left: -70vw;
+  opacity: 0.09;
+  animation: wisp-cross 128s linear infinite;
+}
+
+.wisp--b {
+  width: 78vw;
+  height: 26vh;
+  top: 26%;
+  left: -85vw;
+  opacity: 0.07;
+  animation: wisp-cross 172s linear infinite;
+  animation-delay: -58s;
+}
+
+.wisp--c {
+  width: 48vw;
+  height: 16vh;
+  top: 44%;
+  left: -55vw;
+  opacity: 0.06;
+  animation: wisp-cross 110s linear infinite;
+  animation-delay: -34s;
+}
+
+@keyframes wisp-cross {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(190vw, 0, 0); }
+}
+
+/* The photograph's veil.
+ *
+ * Two layers, because one uniform wash cannot do both jobs. The text column
+ * needs cover for the brightest thing under it - a sunlit cloud at
+ * rgb(254,222,165) - while the rest of the frame must stay bright enough to
+ * look like weather rather than night.
+ *
+ * A base wash of 0.30 keeps the photograph alive everywhere; an elliptical
+ * veil adds cover only where the words are. Together they reach 0.748 behind
+ * the text (--ink-muted clears at 4.77:1) while the right of the frame keeps
+ * luminance 0.128 - about ten times lighter than the flat wash this replaces.
+ *
+ * The colour is warm plum-brown rather than blue-black. That is what stops the
+ * page reading as night: the darkness is dusk-coloured, like the photograph. */
 .backdrop__photo-scrim {
   background:
-    linear-gradient(
-      100deg,
-      rgba(22, 14, 18, 0.86) 0%,
-      rgba(22, 14, 18, 0.74) 45%,
-      rgba(22, 14, 18, 0.44) 70%,
-      rgba(22, 14, 18, 0.3) 100%
+    radial-gradient(
+      118% 92% at 20% 42%,
+      rgba(56, 32, 30, 0.64) 0%,
+      rgba(56, 32, 30, 0.46) 34%,
+      rgba(56, 32, 30, 0.12) 62%,
+      rgba(56, 32, 30, 0) 78%
     ),
     linear-gradient(
       to bottom,
-      rgba(22, 14, 18, 0.25) 0%,
-      rgba(22, 14, 18, 0.05) 35%,
-      rgba(22, 14, 18, 0.28) 100%
-    );
+      rgba(40, 22, 24, 0.34) 0%,
+      rgba(40, 22, 24, 0.12) 34%,
+      rgba(48, 26, 24, 0.3) 100%
+    ),
+    rgba(56, 32, 30, 0.3);
 }
 
 @media (max-width: 48rem) {
-  /* Portrait: text spans the full width, so the veil has to as well. */
   .backdrop__photo-scrim {
     background:
       linear-gradient(
         to bottom,
-        rgba(22, 14, 18, 0.82) 0%,
-        rgba(22, 14, 18, 0.72) 45%,
-        rgba(22, 14, 18, 0.78) 100%
-      );
+        rgba(56, 32, 30, 0.62) 0%,
+        rgba(56, 32, 30, 0.5) 42%,
+        rgba(48, 26, 24, 0.58) 100%
+      ),
+      rgba(56, 32, 30, 0.3);
   }
 
-  .backdrop__photo {
-    background-position: 66% 38%;
-  }
+  .backdrop__photo { background-position: 62% 38%; }
+
+  /* Two wisps are plenty on a phone, and cheaper. */
+  .wisp--c { display: none; }
 }
 
 /* --- Sky ---------------------------------------------------------------- */
@@ -325,9 +394,13 @@
   }
 
   /* Hold the photograph still, but keep the scale so framing is unchanged. */
-  .backdrop__photo {
+  .backdrop__photo,
+  .wisp {
     animation: none !important;
-    transform: scale(1.08);
+  }
+
+  .backdrop__photo {
+    transform: scale(1.1);
   }
 
   .backdrop__lightning {

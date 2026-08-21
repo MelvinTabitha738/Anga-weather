@@ -57,21 +57,24 @@ export default function EmptyState({ suggestions = [], onSelect, children }) {
 
       <section className="home__features" aria-label="What Anga does">
         <article className="feature">
-          <h2 className="feature__title">Hour by hour</h2>
+          <h2 className="feature__title">24 hours, then 7 days</h2>
           <p className="feature__body">
-            A twelve-hour ribbon with rain under every number.
+            The next twenty-four hours hour by hour, then the week ahead —
+            with rainfall in millimetres under every reading.
           </p>
         </article>
         <article className="feature">
-          <h2 className="feature__title">The sky reacts</h2>
+          <h2 className="feature__title">The page becomes the weather</h2>
           <p className="feature__body">
-            Colour, light and haze shift with the conditions you&rsquo;re reading.
+            Sky, light and rain on screen follow the real conditions in the
+            town you searched — heavier rainfall really does fall harder.
           </p>
         </article>
         <article className="feature">
-          <h2 className="feature__title">Fast and honest</h2>
+          <h2 className="feature__title">Never guesses how fresh it is</h2>
           <p className="feature__body">
-            Cached server-side, never stale, never overstating its age.
+            Answers come from a server-side cache, so they arrive instantly —
+            and every reading tells you its exact age.
           </p>
         </article>
       </section>
