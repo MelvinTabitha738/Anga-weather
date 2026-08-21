@@ -829,9 +829,13 @@ text spans the frame, so the veil follows it.
 
 **The display line is bounded by viewport height as well as width.** Sized on width alone
 it pushed "Start somewhere" and the town chips below the fold on a laptop — and those are
-the controls that make the page usable. Verified from 1280×720 to 1920×1080 and down to a
-360px phone; below ~640px of height a separate rule steps the type down rather than
-letting the chips drop.
+the controls that make the page usable.
+
+The height factor sits close to the real ceiling rather than safely under it. At 1366×768
+the largest headline that still keeps the chips visible is ~162px; the type lands at 134px
+with 78px to spare. An earlier attempt used barely a third of that headroom and simply
+looked small. Verified from 1280×720 to 1920×1080 and down to a 360px phone; below ~640px
+of height a separate rule steps the type down rather than letting the chips drop.
 
 Performance and comfort: one canvas and one `requestAnimationFrame` loop, delta-time
 integrated so speed is identical at 60Hz and 120Hz, paused when the tab is hidden, and

@@ -494,10 +494,17 @@ body {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 700;
-  /* Bounded by viewport HEIGHT as well as width. Sized on width alone, the
-     two display lines pushed "Start somewhere" and the town chips below the
-     fold on a laptop - and those are the controls that make the page usable. */
-  font-size: clamp(2.7rem, min(8.6vw, 12.4vh), 7rem);
+  /* Bounded by viewport HEIGHT as well as width, because sized on width alone
+     the two display lines pushed "Start somewhere" and the town chips below
+     the fold on a laptop - and those are the controls that make the page
+     usable.
+     
+     The height factor is set close to the real ceiling rather than
+     conservatively below it: at 1366x768 the largest headline that still keeps
+     the chips visible is ~162px, and this lands at 134px with 78px to spare.
+     An earlier version left most of that headroom unused and simply looked
+     small. */
+  font-size: clamp(2.9rem, min(10.5vw, 17.5vh), 8.5rem);
   line-height: 0.97;
   letter-spacing: -0.018em;
   display: flex;
@@ -834,8 +841,8 @@ body {
   }
 
   .home__title {
-    /* 13.5vw keeps the two lines commanding without overflowing 320px. */
-    font-size: clamp(2.7rem, 13.5vw, 4.4rem);
+    /* 15vw keeps the two lines commanding without overflowing a 320px screen. */
+    font-size: clamp(2.9rem, 15vw, 5rem);
   }
 
   .home__eyebrow {
