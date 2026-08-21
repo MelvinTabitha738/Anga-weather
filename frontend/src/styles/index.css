@@ -496,15 +496,14 @@ body {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 700;
-  /* 7.5rem (120px), which is the reference size to within a pixel - measured
-     cap height 83px on a 1440px frame against Playfair's 0.70 cap ratio gives
-     118.6px.
+  /* 9rem (144px) - larger than the reference's 118.6px, which is what was
+     asked for.
      
-     The two other terms are guards, not the design. 14.5vw stops "Kenyan sky."
-     wrapping between about 769px and 830px wide, where 120px type would just
-     outrun the line; 20vh handles short windows. Above ~830px both step aside
-     and the flat 7.5rem applies. */
-  font-size: clamp(2.5rem, min(7.5rem, 14.5vw, 20vh), 7.5rem);
+     The other terms are guards, not the design. 14.5vw stops "Kenyan sky."
+     wrapping on narrow windows, where 144px type would outrun the line; 26vh
+     is a backstop for genuinely tiny windows and stays out of the way
+     otherwise. Above ~995px wide both step aside and the flat 9rem applies. */
+  font-size: clamp(2.5rem, min(9rem, 14.5vw, 26vh), 9rem);
   line-height: 0.928;
   letter-spacing: -0.018em;
   display: flex;
@@ -934,29 +933,52 @@ body {
   }
 }
 
-/* --- Very short viewports ----------------------------------------------- */
-/* Below ~640px of height the display line has to give way, or "Start
-   somewhere" and the town chips drop below the fold - and those are the
-   controls that make the page usable. */
-@media (max-height: 40rem) {
-  .home__title {
-    font-size: clamp(2.1rem, min(8vw, 10vh), 3.2rem);
+/* --- Short windows ------------------------------------------------------
+   A laptop with a taskbar and browser chrome often leaves only 600-640px of
+   viewport, which is not unusual enough to deserve a different design.
+
+   An earlier version of this block capped the display line at 3.2rem there -
+   less than half its normal size - which silently overrode every attempt to
+   enlarge the type on exactly the machines most likely to be reading it. The
+   type is now left alone and the SPACING gives way instead, which buys the
+   same vertical room without touching the thing the page is built around.
+   ------------------------------------------------------------------------ */
+@media (max-height: 44rem) {
+  .home {
+    gap: 1.75rem;
   }
 
   .home__hero {
     padding-top: 0.25rem;
   }
 
+  .home__eyebrow {
+    margin-bottom: 0.5rem;
+  }
+
   .home__lede {
     margin-top: 0.7rem;
+    font-size: 0.92rem;
+    line-height: 1.45;
   }
 
   .home__search {
-    margin-top: 0.9rem;
+    margin-top: 0.85rem;
   }
 
   .home__starters {
-    margin-top: 0.8rem;
+    margin-top: 0.75rem;
+  }
+
+  .home__label {
+    margin-bottom: 0.45rem;
+  }
+}
+
+/* Only below ~510px of height does the type itself have to give way. */
+@media (max-height: 32rem) {
+  .home__title {
+    font-size: clamp(2rem, min(9vw, 15vh), 4rem);
   }
 }
 

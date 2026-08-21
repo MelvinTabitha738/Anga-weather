@@ -832,7 +832,7 @@ text spans the frame, so the veil follows it.
 baselines 110px apart for a **line-height of 0.928**. At 1440 the implementation renders
 119px and the accent line spans 725px against the reference's 726px.
 
-Getting there took three wrong turns worth recording, because none of them was a type-scale
+Getting there took four wrong turns worth recording, because none of them was a type-scale
 problem:
 
 1. Fitting the hero to the fold silently cut the type from 118px to 94px.
@@ -842,11 +842,19 @@ problem:
    while the reference's accent line needs 726px, so the line had nowhere to go. With
    `overflow-wrap: anywhere` it could break mid-word, which reads as a rendering fault.
 
-The fix was to stop sharing one measure between the display line and the body copy. In the
-reference the headline runs to 50% of the viewport while the lede stops at about 30%, so
-each now sets its own. The height term survives only as a guard for genuinely short
-windows, and below ~640px of height a separate rule steps the type down rather than letting
-the chips drop.
+4. A short-window rule capped the type at **3.2rem (51px)** on any viewport under 640px
+   tall. A laptop with a taskbar and browser chrome routinely leaves 600–640px, so on
+   exactly the machines most likely to be reading the page, every attempt to enlarge the
+   type was being silently overridden.
+
+The fix was to stop sharing one measure between the display line and the body copy — in
+the reference the headline runs to 50% of the viewport while the lede stops at about 30%,
+so each now sets its own — and to make the short-window rule give way on **spacing** rather
+than on the type. That buys the same vertical room without touching the thing the page is
+built around. Only below ~510px of height does the headline itself shrink.
+
+The display line now sits at a flat **9rem (144px)**, larger than the reference, holding at
+that size from roughly 995px wide upward and on windows as short as 640px.
 
 Performance and comfort: one canvas and one `requestAnimationFrame` loop, delta-time
 integrated so speed is identical at 60Hz and 120Hz, paused when the tab is hidden, and
