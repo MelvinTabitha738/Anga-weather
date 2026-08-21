@@ -43,16 +43,21 @@
   to   { transform: scale(1.1) translate3d(1.6%, -0.5%, 0); }
 }
 
-/* Soft wisps crossing the sky.
+/* Cloud drifting across the sky.
  *
- * This is what actually reads as "the clouds are moving". Drifting the whole
- * photograph moves the mountains too, which is noticeable and slightly
- * seasick; a few blurred, barely-there highlights crossing the upper frame
- * read as cloud passing in front of cloud.
+ * This is what actually reads as "the clouds are moving". Panning the whole
+ * photograph moves the mountains with it, which is noticeable and faintly
+ * seasick; soft masses crossing the upper frame read as cloud passing in front
+ * of cloud, which is how a sky actually behaves.
  *
- * Deliberately faint (6-9% white) and slow (110-170s). At that weight they are
- * felt rather than watched, which is the point - a background that draws the
- * eye is a background doing its job badly.
+ * Each mass does two things at once: it travels horizontally, and it billows -
+ * a slow, offset scale and vertical rise. Pure horizontal translation reads as
+ * a slide; real cloud swells as it goes. The two cycles have deliberately
+ * unrelated durations so they never resynchronise into a visible loop.
+ *
+ * Weight is the whole game here. Strong enough to be seen if you look, soft
+ * enough to ignore while reading - a background that pulls the eye is a
+ * background doing its job badly.
  */
 .backdrop__wisps {
   overflow: hidden;
@@ -62,47 +67,55 @@
   position: absolute;
   border-radius: 50%;
   background: radial-gradient(
-    ellipse at 45% 50%,
-    rgba(255, 236, 214, 0.5) 0%,
-    rgba(255, 226, 198, 0.22) 42%,
-    transparent 72%
+    ellipse at 42% 46%,
+    rgba(255, 240, 220, 0.62) 0%,
+    rgba(255, 228, 200, 0.3) 38%,
+    rgba(255, 220, 190, 0.1) 62%,
+    transparent 76%
   );
-  filter: blur(46px);
+  filter: blur(38px);
   will-change: transform;
 }
 
 .wisp--a {
-  width: 62vw;
-  height: 20vh;
-  top: 8%;
-  left: -70vw;
-  opacity: 0.09;
-  animation: wisp-cross 128s linear infinite;
+  width: 58vw;
+  height: 22vh;
+  top: 6%;
+  left: -66vw;
+  opacity: 0.17;
+  animation: wisp-cross 82s linear infinite, wisp-billow 27s ease-in-out infinite alternate;
 }
 
 .wisp--b {
-  width: 78vw;
-  height: 26vh;
-  top: 26%;
-  left: -85vw;
-  opacity: 0.07;
-  animation: wisp-cross 172s linear infinite;
-  animation-delay: -58s;
+  width: 74vw;
+  height: 28vh;
+  top: 24%;
+  left: -82vw;
+  opacity: 0.13;
+  animation: wisp-cross 118s linear infinite, wisp-billow 34s ease-in-out infinite alternate;
+  animation-delay: -41s, -12s;
 }
 
 .wisp--c {
-  width: 48vw;
-  height: 16vh;
-  top: 44%;
-  left: -55vw;
-  opacity: 0.06;
-  animation: wisp-cross 110s linear infinite;
-  animation-delay: -34s;
+  width: 46vw;
+  height: 18vh;
+  top: 43%;
+  left: -54vw;
+  opacity: 0.1;
+  animation: wisp-cross 68s linear infinite, wisp-billow 21s ease-in-out infinite alternate;
+  animation-delay: -25s, -7s;
 }
 
 @keyframes wisp-cross {
   from { transform: translate3d(0, 0, 0); }
   to   { transform: translate3d(190vw, 0, 0); }
+}
+
+/* Applied to a wrapper so it composes with the crossing motion rather than
+   overwriting it. */
+@keyframes wisp-billow {
+  from { scale: 1 0.92; }
+  to   { scale: 1.12 1.08; }
 }
 
 /* The photograph's veil.

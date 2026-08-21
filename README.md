@@ -786,12 +786,19 @@ The landing page is built to a supplied design: an eyebrow, a two-line Playfair 
 headline with the second line in warm amber, a short lede, the search, starting points,
 and three feature panels — over a **photograph of Mount Kenya at dusk**.
 
-**The clouds move, not the frame.** Drifting the whole photograph moves the mountains
-too, which is noticeable and faintly seasick. Instead the photograph barely shifts
-(64 seconds, no scale change, so the land stays put) while three blurred wisps at 6–9%
-opacity cross the sky over 110–170 seconds. At that weight they are felt rather than
-watched — a background that draws the eye is a background doing its job badly. All of it
-stops under `prefers-reduced-motion`.
+**The clouds move, not the frame.** Panning the whole photograph moves the mountains with
+it, which is noticeable and faintly seasick. Instead the photograph barely shifts (64s, no
+scale change, so the land stays put) while three soft masses cross the upper frame.
+
+Each mass does two things at once: it travels horizontally *and* billows — a slow, offset
+scale and rise. Pure horizontal translation reads as a slide; real cloud swells as it
+goes. The two cycles have deliberately unrelated durations (68–118s crossing against
+21–34s billowing) so they never resynchronise into a visible loop. The billow uses the
+independent `scale` property rather than `transform`, so it composes with the crossing
+motion instead of overwriting it.
+
+Weight is the whole game: strong enough to notice if you look, soft enough to ignore while
+reading. All of it stops under `prefers-reduced-motion`.
 
 **The design's live-weather card is deliberately absent.** Showing a reading before anyone
 has searched would mean an upstream call on every landing view — on a 1,000-request
@@ -822,8 +829,9 @@ text spans the frame, so the veil follows it.
 
 **The display line is bounded by viewport height as well as width.** Sized on width alone
 it pushed "Start somewhere" and the town chips below the fold on a laptop — and those are
-the controls that make the page usable. Verified across viewports from 1280×720 to
-1920×1080 and down to a 360px phone.
+the controls that make the page usable. Verified from 1280×720 to 1920×1080 and down to a
+360px phone; below ~640px of height a separate rule steps the type down rather than
+letting the chips drop.
 
 Performance and comfort: one canvas and one `requestAnimationFrame` loop, delta-time
 integrated so speed is identical at 60Hz and 120Hz, paused when the tab is hidden, and

@@ -497,7 +497,7 @@ body {
   /* Bounded by viewport HEIGHT as well as width. Sized on width alone, the
      two display lines pushed "Start somewhere" and the town chips below the
      fold on a laptop - and those are the controls that make the page usable. */
-  font-size: clamp(2.4rem, min(7.6vw, 10.5vh), 6.2rem);
+  font-size: clamp(2.7rem, min(8.6vw, 12.4vh), 7rem);
   line-height: 0.97;
   letter-spacing: -0.018em;
   display: flex;
@@ -834,8 +834,8 @@ body {
   }
 
   .home__title {
-    /* 12.5vw keeps the two lines commanding without overflowing 320px. */
-    font-size: clamp(2.6rem, 12.5vw, 4rem);
+    /* 13.5vw keeps the two lines commanding without overflowing 320px. */
+    font-size: clamp(2.7rem, 13.5vw, 4.4rem);
   }
 
   .home__eyebrow {
@@ -920,6 +920,32 @@ body {
   .linkback {
     padding-block: 0.6rem;
     min-height: 44px;
+  }
+}
+
+/* --- Very short viewports ----------------------------------------------- */
+/* Below ~640px of height the display line has to give way, or "Start
+   somewhere" and the town chips drop below the fold - and those are the
+   controls that make the page usable. */
+@media (max-height: 40rem) {
+  .home__title {
+    font-size: clamp(2.1rem, min(8vw, 10vh), 3.2rem);
+  }
+
+  .home__hero {
+    padding-top: 0.25rem;
+  }
+
+  .home__lede {
+    margin-top: 0.7rem;
+  }
+
+  .home__search {
+    margin-top: 0.9rem;
+  }
+
+  .home__starters {
+    margin-top: 0.8rem;
   }
 }
 
