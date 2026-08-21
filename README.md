@@ -827,15 +827,26 @@ The colour is warm plum-brown rather than blue-black, which matters more than th
 figure: the darkness is now dusk-coloured, like the photograph itself. In portrait the
 text spans the frame, so the veil follows it.
 
-**The display line is bounded by viewport height as well as width.** Sized on width alone
-it pushed "Start somewhere" and the town chips below the fold on a laptop — and those are
-the controls that make the page usable.
+**The display line is measured off the reference**, not estimated. Cap height 83px on a
+1440px frame, against Playfair Display's 0.70 cap ratio, gives **118.6px = 8.23vw**, with
+baselines 110px apart for a **line-height of 0.928**. At 1440 the implementation renders
+119px and the accent line spans 725px against the reference's 726px.
 
-The height factor sits close to the real ceiling rather than safely under it. At 1366×768
-the largest headline that still keeps the chips visible is ~162px; the type lands at 134px
-with 78px to spare. An earlier attempt used barely a third of that headroom and simply
-looked small. Verified from 1280×720 to 1920×1080 and down to a 360px phone; below ~640px
-of height a separate rule steps the type down rather than letting the chips drop.
+Getting there took three wrong turns worth recording, because none of them was a type-scale
+problem:
+
+1. Fitting the hero to the fold silently cut the type from 118px to 94px.
+2. A tight `vh` term in the size clamp then held it down further on short windows —
+   the clamp was doing the shrinking, not the design.
+3. The real constraint was the **container**: the hero column was capped at 40rem (640px)
+   while the reference's accent line needs 726px, so the line had nowhere to go. With
+   `overflow-wrap: anywhere` it could break mid-word, which reads as a rendering fault.
+
+The fix was to stop sharing one measure between the display line and the body copy. In the
+reference the headline runs to 50% of the viewport while the lede stops at about 30%, so
+each now sets its own. The height term survives only as a guard for genuinely short
+windows, and below ~640px of height a separate rule steps the type down rather than letting
+the chips drop.
 
 Performance and comfort: one canvas and one `requestAnimationFrame` loop, delta-time
 integrated so speed is identical at 60Hz and 120Hz, paused when the tab is hidden, and

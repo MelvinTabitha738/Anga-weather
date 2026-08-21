@@ -476,8 +476,10 @@ body {
 .home__hero {
   display: flex;
   flex-direction: column;
-  /* The words occupy the left of the frame; the cumulus stays visible right. */
-  max-width: 40rem;
+  /* No column cap here. The display line and the body copy want different
+     measures - in the reference the headline runs to 50% of the viewport while
+     the lede stops at about 30% - so each sets its own rather than sharing one
+     that has to compromise between them. */
   padding-top: clamp(0.5rem, 3vh, 2rem);
 }
 
@@ -494,18 +496,15 @@ body {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 700;
-  /* Bounded by viewport HEIGHT as well as width, because sized on width alone
-     the two display lines pushed "Start somewhere" and the town chips below
-     the fold on a laptop - and those are the controls that make the page
-     usable.
+  /* Measured off the reference design: cap height 83px on a 1440px frame
+     against Playfair's 0.70 cap ratio gives 118.6px, i.e. 8.23vw, with
+     baselines 110px apart for a line-height of 0.928.
      
-     The height factor is set close to the real ceiling rather than
-     conservatively below it: at 1366x768 the largest headline that still keeps
-     the chips visible is ~162px, and this lands at 134px with 78px to spare.
-     An earlier version left most of that headroom unused and simply looked
-     small. */
-  font-size: clamp(2.9rem, min(10.5vw, 17.5vh), 8.5rem);
-  line-height: 0.97;
+     The height term only guards genuinely short windows; at 20vh it stays out
+     of the way on any normal one, which earlier versions did not - a tight vh
+     factor was silently holding the type down. */
+  font-size: clamp(2.6rem, min(8.23vw, 20vh), 9.5rem);
+  line-height: 0.928;
   letter-spacing: -0.018em;
   display: flex;
   flex-direction: column;
@@ -513,7 +512,10 @@ body {
 
 .home__title-line {
   display: block;
-  overflow-wrap: anywhere;
+  /* Normal wrapping only. `anywhere` would break "Kenyan sky." mid-word once
+     the line outgrew its container, which looked like a rendering fault. With
+     the measure removed it fits on one line at every size. */
+  overflow-wrap: normal;
 }
 
 /* The warm second line, picked from the sunlit cloud in the photograph. */
@@ -841,8 +843,9 @@ body {
   }
 
   .home__title {
-    /* 15vw keeps the two lines commanding without overflowing a 320px screen. */
-    font-size: clamp(2.9rem, 15vw, 5rem);
+    /* "Kenyan sky." measures ~6.1x the font size, so 14.5vw is the largest
+       that still keeps it on one line down to a 320px screen. */
+    font-size: clamp(2.5rem, 14.5vw, 5rem);
   }
 
   .home__eyebrow {
