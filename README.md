@@ -853,8 +853,8 @@ so each now sets its own — and to make the short-window rule give way on **spa
 than on the type. That buys the same vertical room without touching the thing the page is
 built around. Only below ~510px of height does the headline itself shrink.
 
-The display line now sits at a flat **9rem (144px)**, larger than the reference, holding at
-that size from roughly 995px wide upward and on windows as short as 640px.
+The display line sits at a flat **7.5rem (120px)** — the reference size to within a pixel —
+holding from roughly 830px wide upward and on windows as short as 640px.
 
 Performance and comfort: one canvas and one `requestAnimationFrame` loop, delta-time
 integrated so speed is identical at 60Hz and 120Hz, paused when the tab is hidden, and

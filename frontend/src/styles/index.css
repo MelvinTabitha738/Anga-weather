@@ -496,14 +496,19 @@ body {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 700;
-  /* 9rem (144px) - larger than the reference's 118.6px, which is what was
-     asked for.
+  /* 7.5rem (120px), which is the reference size to within a pixel - measured
+     cap height 83px on a 1440px frame against Playfair's 0.70 cap ratio gives
+     118.6px.
      
      The other terms are guards, not the design. 14.5vw stops "Kenyan sky."
-     wrapping on narrow windows, where 144px type would outrun the line; 26vh
+     wrapping on narrow windows, where 120px type would outrun the line; 26vh
      is a backstop for genuinely tiny windows and stays out of the way
-     otherwise. Above ~995px wide both step aside and the flat 9rem applies. */
-  font-size: clamp(2.5rem, min(9rem, 14.5vw, 26vh), 9rem);
+     otherwise. Above ~830px wide both step aside and the flat 7.5rem applies.
+     
+     Note the deliberately loose 26vh: an earlier 10vh cap in the short-window
+     block silently held this to 51px on any laptop with ~640px of viewport,
+     which is most of them. Keep this term generous. */
+  font-size: clamp(2.5rem, min(7.5rem, 14.5vw, 26vh), 7.5rem);
   line-height: 0.928;
   letter-spacing: -0.018em;
   display: flex;
