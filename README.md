@@ -807,9 +807,22 @@ back across that column instead, so the clouds read over the sky without lifting
 contrast behind the headline. In portrait, where the words span the frame, the mask fades
 vertically.
 
-The photograph beneath pans horizontally at a constant scale (±4%, 78s, ~3.4 px/s). Zooming
-is what made an earlier attempt feel seasick; a level pan does not, so the travel can be
-wider. It overhangs 115px each side against 67px of travel, so no edge is ever exposed.
+**The photograph's pan is the motion that matters.** Overlaid shapes read as an overlay
+however well drawn; only panning the image moves the cumulus that is actually *in* it. It
+pans horizontally at a constant scale — ±7% over 60s, about **8.4 px/second** on a 1440px
+frame. An earlier ±4% over 78s came to 3.4 px/s, which the eye reads as a still. Zooming is
+what made a still earlier attempt feel seasick; a level pan does not, which is why the
+travel can be this wide. `scale(1.25)` leaves 180px of overhang each side against 126px of
+travel, so no edge is exposed.
+
+It carries `animation-delay: -15s`. `ease-in-out` has zero velocity at both ends, so with
+no offset the page opens at a dead stop and the photograph looks frozen for the first few
+seconds — precisely the window in which someone decides whether anything is moving. The
+offset drops the viewer in at peak velocity.
+
+The white shapes above it are set to 34%, giving 4–7% effective. At 90% they became legible
+*as shapes* — a white overlay sliding across a photograph, which is worse than invisible.
+They are haze and depth only; the photograph does the moving.
 
 Weight is the rest of it: strong enough to notice if you look, soft enough to ignore while
 reading. All of it stops under `prefers-reduced-motion`.

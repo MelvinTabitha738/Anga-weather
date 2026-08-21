@@ -33,20 +33,33 @@
   /* Held at a constant scale. Zooming makes the mountains breathe, which the
      eye reads as the whole frame lurching. Only the position drifts, and only
      slightly - the sky does the moving, the land stays put. */
-  transform: scale(1.16) translate3d(-4%, 0, 0);
-  /* Horizontal only, at a constant scale. Zooming is what made an earlier
-     attempt feel seasick; a level pan does not, so the travel can be much
-     wider. At +/-4% over 78s this moves roughly 1.5px per second on a 1440px
-     frame - slow, but plainly moving, where the previous +/-1.6% over 110s
-     worked out at 0.7px/s and read as a still image. */
-  animation: sky-drift 78s ease-in-out infinite alternate;
+  transform: scale(1.25) translate3d(-7%, 0, 0);
+  /* THIS is the motion that moves the photograph's own clouds. Overlaid
+     shapes read as an overlay, however well drawn; only panning the image
+     moves the cumulus that is actually in it.
+     
+     Horizontal only, at a constant scale - zooming is what made an earlier
+     attempt feel seasick, and a level pan does not, so the travel can be wide.
+     +/-7% over 60s is about 8.4px/second on a 1440px frame. The previous
+     +/-4% over 78s worked out at 3.4px/s, which the eye reads as a still.
+     
+     scale(1.25) leaves 180px of overhang each side against 126px of travel, so
+     no edge is ever exposed. */
+  animation: sky-drift 60s ease-in-out infinite alternate;
+  /* Start a quarter of the way in, not at a keyframe end.
+   *
+   * ease-in-out has zero velocity at both ends, so with no delay the page
+   * opens at a dead stop and the photograph appears frozen for the first few
+   * seconds - the exact window in which someone decides whether anything is
+   * moving. A -15s offset drops the viewer in near peak velocity. */
+  animation-delay: -15s;
   will-change: transform;
   backface-visibility: hidden;
 }
 
 @keyframes sky-drift {
-  from { transform: scale(1.16) translate3d(-4%, 0, 0); }
-  to   { transform: scale(1.16) translate3d(4%, 0, 0); }
+  from { transform: scale(1.25) translate3d(-7%, 0, 0); }
+  to   { transform: scale(1.25) translate3d(7%, 0, 0); }
 }
 
 /* The photograph's veil.
