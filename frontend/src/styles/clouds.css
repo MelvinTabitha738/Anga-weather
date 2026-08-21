@@ -65,15 +65,20 @@
    * change once masked. That is below the threshold of noticing, which is why
    * the clouds animated correctly and still could not be seen.
    *
-   * 90% then overshot in the other direction: the shapes became legible AS
-   * shapes - a white overlay sliding across a photograph, which is worse than
-   * invisible. At 34% they land at 4-7% effective, enough to add haze and
-   * depth without ever resolving into an object.
+   * At 90% the per-cloud opacities land at 11-20% effective - visible as soft
+   * smoke or haze drifting across the frame, which is the intent.
    *
-   * The motion that actually moves clouds is the photograph's own pan; see
-   * .backdrop__photo in backdrop.css. These only soften it. */
-  background: rgba(255, 255, 255, 0.34);
-  background: oklch(1 0 0 / 34%);
+   * It was briefly dropped to 34% on a misreading of feedback, which took it
+   * back to roughly invisible. Keep it here.
+   *
+   * This layer is not the same thing as the moving clouds: the cumulus in the
+   * photograph is moved by panning the photograph itself (see
+   * .backdrop__photo in backdrop.css). The two run together - the pan eases
+   * because it is a bounded travel that must turn around, these are strictly
+   * linear and loop in one direction, and that mismatch is what keeps them
+   * reading as separate planes rather than one sliding layer. */
+  background: rgba(255, 255, 255, 0.9);
+  background: oklch(1 0 0 / 90%);
   /* 30px, not 40px. A 40px blur on shapes only 48-115px tall dissolves most of
      the peak opacity before it ever reaches the screen. */
   filter: blur(30px);

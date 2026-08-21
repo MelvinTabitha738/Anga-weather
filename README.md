@@ -820,9 +820,13 @@ no offset the page opens at a dead stop and the photograph looks frozen for the 
 seconds — precisely the window in which someone decides whether anything is moving. The
 offset drops the viewer in at peak velocity.
 
-The white shapes above it are set to 34%, giving 4–7% effective. At 90% they became legible
-*as shapes* — a white overlay sliding across a photograph, which is worse than invisible.
-They are haze and depth only; the photograph does the moving.
+Above it, five soft shapes drift at 90% white — 11–20% effective, reading as smoke or haze
+crossing the frame. This is a *second* layer of motion, not a substitute: the photograph's
+pan moves the cumulus that is in the image, and these pass in front of it.
+
+The two run on deliberately different curves. The pan eases, because it is a bounded travel
+that has to turn around; the shapes are strictly linear and loop in one direction. That
+mismatch is what keeps them reading as separate planes rather than one sliding layer.
 
 Weight is the rest of it: strong enough to notice if you look, soft enough to ignore while
 reading. All of it stops under `prefers-reduced-motion`.
