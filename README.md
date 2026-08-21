@@ -10,6 +10,10 @@ a Django service that sits between users and the
 **server-side caching, request coalescing, rate-limit awareness and graceful
 degradation**.
 
+**Live:** [anga-gules.vercel.app](https://anga-gules.vercel.app/) ·
+**API:** [anga-api-9boq.onrender.com](https://anga-api-9boq.onrender.com) ·
+**Metrics:** [/api/meta/stats/](https://anga-api-9boq.onrender.com/api/meta/stats/)
+
 The governing idea:
 
 > A user request does not have to become an upstream request.
@@ -265,7 +269,7 @@ was already caching.
                                    │  HTTPS, no API key in the browser
                                    ▼
                      ┌───────────────────────────┐        ┌──────────────────┐
-                     │    Django + DRF (Render)  │───────▶│   PostgreSQL     │
+                     │    Django + DRF (Render)  │───────▶│ PostgreSQL (Neon)│
                      │                           │        │                  │
                      │  Validate & normalise     │        │  Kenya gazetteer │
                      │  Throttle (per client)    │        │  47 counties     │
@@ -286,7 +290,7 @@ was already caching.
                      ┌───────────────────────────┐
                      │      Weather-AI API       │
                      │  /v1/weather?lat&lon      │
-                     │  ai=false, days=1         │
+                     │  days=7, ai=false         │
                      └───────────────────────────┘
 ```
 
@@ -1222,11 +1226,11 @@ Full documentation with defaults is in [`backend/.env.example`](backend/.env.exa
 
 ## Testing
 
-**219 tests.** 98 backend, 121 frontend.
+**222 tests.** 98 backend, 124 frontend.
 
 ```bash
 cd backend && python manage.py test        # 98 tests
-cd frontend && npm test                    # 121 tests
+cd frontend && npm test                    # 124 tests
 ```
 
 Coverage is concentrated on the engineering behaviour rather than spread thin:
@@ -1315,7 +1319,8 @@ do here: no schema, no tables. `build.sh` migrates and seeds it on the first dep
 ### Step 3 — Provision the backend on Render
 
 Render → **New → Blueprint** → select this repository. It reads
-[`render.yaml`](render.yaml) and provisions three things:
+[`render.yaml`](render.yaml) and provisions two things — the database is not among them,
+because it lives on Neon:
 
 | Resource | Name | Purpose |
 | -------- | ---- | ------- |
@@ -1346,20 +1351,24 @@ appends it automatically.
 
 ### Step 5 — Verify the backend
 
+The deployed instance is at **`https://anga-api-9boq.onrender.com`** (Render assigns a
+suffix when the plain name is taken), with the frontend at
+**`https://anga-gules.vercel.app`**.
+
 `build.sh` runs migrations and seeds the gazetteer on every deploy; both are idempotent.
 Once the deploy is live:
 
 ```bash
-curl https://anga-api.onrender.com/healthz
+curl https://anga-api-9boq.onrender.com/healthz
 # {"status":"ok","service":"anga"}
 
-curl "https://anga-api.onrender.com/api/locations/?q=kaka"
+curl "https://anga-api-9boq.onrender.com/api/locations/?q=kaka"
 # Kakamega, Mumias  -> PostgreSQL is seeded
 
-curl "https://anga-api.onrender.com/api/weather/?location=Nairobi" | head -c 200
+curl "https://anga-api-9boq.onrender.com/api/weather/?location=Nairobi" | head -c 200
 # "status":"live"   -> the Weather-AI key works
 
-curl "https://anga-api.onrender.com/api/weather/?location=Nairobi" | head -c 200
+curl "https://anga-api-9boq.onrender.com/api/weather/?location=Nairobi" | head -c 200
 # "status":"cached" -> Redis is connected and caching
 ```
 
@@ -1374,7 +1383,7 @@ Vercel → **New Project** → import the repository:
 | ------- | ----- |
 | Root Directory | `frontend` |
 | Framework preset | Vite *(auto-detected)* |
-| Environment variable | `VITE_API_BASE_URL` = `https://anga-api.onrender.com` |
+| Environment variable | `VITE_API_BASE_URL` = `https://anga-api-9boq.onrender.com` |
 
 Setting **Root Directory** matters — without it Vercel builds from the repo root and finds
 no `package.json`. [`vercel.json`](frontend/vercel.json) handles the SPA rewrite and
@@ -1400,7 +1409,7 @@ opening CORS to the world. Render redeploys automatically.
 Open the Vercel URL and search for a Kenyan town. Then check the cache is doing its job:
 
 ```bash
-curl https://anga-api.onrender.com/api/meta/stats/
+curl https://anga-api-9boq.onrender.com/api/meta/stats/
 ```
 
 `derived.upstream_requests_avoided` should climb while `upstream_requests_made` stays
@@ -1484,27 +1493,39 @@ prose — but it means a visible feature of the design is currently invisible.
 
 ## Future improvements
 
-Deliberately **not** implemented, to keep the scope honest:
+Anga does what it set out to do: the caching, coalescing, rate-limit handling and graceful
+degradation are all in place and tested, and the product on top of them is complete —
+current conditions, a 24-hour outlook, a 7-day forecast, weather-reactive visuals and
+honest freshness reporting.
 
-- **Stale-while-revalidate.** Serve the stale entry immediately and refresh in the
-  background, so nobody ever waits on upstream. The clearest next win.
-- **Background refresh for popular locations**, driven by observed request counts, so hot
-  locations are always warm and cold ones never cost anything.
-- **Async views**, removing the blocking follower wait entirely.
-- **A real metrics backend** (Prometheus/StatsD) instead of cache counters, with alerting on
-  quota exhaustion before it happens.
-- **Automated load testing** in CI to assert the coalescing property under sustained load
-  rather than in a single test run.
-- **Live weather on the landing page.** Tempting and currently refused: six cities would be
-  six upstream calls every 30 minutes, roughly 288 a day against a budget of 33. It only
-  becomes affordable on a paid plan, or with a background refresher warming a fixed set.
-- **Sunrise and sunset**, if the provider ever returns them. `is_day` is currently the only
-  daylight signal, so the backdrop switches between day and night without knowing when the
-  boundary actually falls.
-- **A Kiswahili interface.** `lang=sw` exists but only translates the AI summary, which is
-  null on this plan. Translating the interface itself is a separate, larger piece of work.
-- **A distributed lock with fencing tokens** (Redlock-style) if this ever ran at a scale
-  where the current lock's failure modes mattered.
+What follows is deliberately short. These are the four things that would genuinely matter
+next, and none of them is a small change.
+
+**Stale-while-revalidate with a demand-driven refresher.** Today a request arriving after
+the TTL lapses waits on the upstream call. It should get the stale entry immediately while
+a background worker refreshes it, so nobody ever waits on Weather-AI. Pair that with
+refreshing only locations that are actually being asked for, and the quota is spent on
+demand rather than on whoever happens to arrive first. This needs a task queue and a
+scheduler, and it changes the failure model: a refresh that fails must not evict what it
+was replacing.
+
+**Async request handling.** A coalescing follower currently blocks a worker thread while it
+waits for the leader — bounded at 12 seconds, fine at this scale, and the clearest
+structural ceiling in the system. Async views would let one worker hold hundreds of waiting
+followers. It is not a drop-in change: the cache client, the HTTP client and the
+single-flight wait would all have to become genuinely non-blocking.
+
+**Correct behaviour when Redis itself is down.** `quota.py` currently fails *open* — if the
+cache is unreachable it allows upstream calls rather than blocking them. That is the wrong
+default against a monthly quota: an outage in the component that protects the budget
+becomes an outage that drains it. Doing better means a local fallback that survives losing
+shared state without either stampeding upstream or refusing all traffic.
+
+**Load testing the coalescing guarantee continuously.** The single-flight property is
+verified once, by a test with 25 threads. It is the claim the whole design rests on, and it
+is exactly the kind of property that silently regresses — a stray `cache.get` in place of
+`cache.add`, a lock TTL that drifts under the upstream latency. It deserves a sustained,
+scheduled load test asserting the upstream call count, not a single unit test.
 
 ---
 
