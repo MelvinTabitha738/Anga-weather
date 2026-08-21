@@ -485,7 +485,9 @@ body {
 
 .home__eyebrow {
   margin: 0 0 clamp(0.6rem, 1.6vh, 1.1rem);
-  color: var(--ink-muted);
+  /* Full-strength: small letterspaced caps over a photograph that now has
+     bright clouds drifting across it need the headroom. */
+  color: var(--ink);
   font-size: 0.72rem;
   font-weight: 400;
   letter-spacing: 0.22em;
@@ -552,7 +554,8 @@ body {
   font-size: 0.7rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  /* Muted rather than faint, for the same reason as the eyebrow. */
+  color: var(--ink-muted);
 }
 
 .home__chips {

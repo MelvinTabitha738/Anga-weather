@@ -57,10 +57,21 @@
 .cloud-shape {
   position: absolute;
   border-radius: 9999px;
-  /* Plain rgba first for older engines, then the oklch original. */
-  background: rgba(255, 255, 255, 0.18);
-  background: oklch(1 0 0 / 18%);
-  filter: blur(40px);
+  /* 90%, not the 18% supplied.
+   *
+   * That figure works against a light sky. This backdrop is a dusk photograph
+   * under a scrim, sitting around luminance 0.04 - so 18% multiplied by the
+   * per-cloud opacity (0.12-0.22) came out at 2-4% white, a +3% luminance
+   * change once masked. That is below the threshold of noticing, which is why
+   * the clouds animated correctly and still could not be seen.
+   *
+   * At 90% the per-cloud opacities land at 11-20% effective, roughly +80% to
+   * +200% luminance against the background: visible as cloud passing. */
+  background: rgba(255, 255, 255, 0.9);
+  background: oklch(1 0 0 / 90%);
+  /* 30px, not 40px. A 40px blur on shapes only 48-115px tall dissolves most of
+     the peak opacity before it ever reaches the screen. */
+  filter: blur(30px);
   pointer-events: none;
   /* Keep the blur on its own layer so only the transform runs per frame;
      re-rasterising a 40px blur every frame is what makes drifts stutter. */
@@ -76,20 +87,25 @@
   inset: 0;
   overflow: hidden;
   pointer-events: none;
+  /* Eased back from the previous near-total cut on the left. The clouds have
+     to be visible across the frame, not only over the right third - they were
+     being hidden precisely where someone looking at the hero would be looking.
+     A floor of 0.38 keeps them present behind the words while still taking
+     enough off to protect the headline's contrast. */
   -webkit-mask-image: linear-gradient(
     100deg,
-    transparent 0%,
-    rgba(0, 0, 0, 0.15) 26%,
-    rgba(0, 0, 0, 0.75) 48%,
-    #000 66%,
+    rgba(0, 0, 0, 0.38) 0%,
+    rgba(0, 0, 0, 0.55) 30%,
+    rgba(0, 0, 0, 0.85) 52%,
+    #000 68%,
     #000 100%
   );
   mask-image: linear-gradient(
     100deg,
-    transparent 0%,
-    rgba(0, 0, 0, 0.15) 26%,
-    rgba(0, 0, 0, 0.75) 48%,
-    #000 66%,
+    rgba(0, 0, 0, 0.38) 0%,
+    rgba(0, 0, 0, 0.55) 30%,
+    rgba(0, 0, 0, 0.85) 52%,
+    #000 68%,
     #000 100%
   );
 }
