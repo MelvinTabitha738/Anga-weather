@@ -10,6 +10,7 @@ import {
   themeToCssVars,
 } from '../../lib/weatherTheme'
 import RainCanvas from './RainCanvas'
+import SkyClouds from './SkyClouds'
 
 /**
  * The atmosphere behind everything.
@@ -50,17 +51,12 @@ export default function Backdrop({ theme, photo = false }) {
       >
         <div className="backdrop__photo" />
         <div className="backdrop__photo-scrim" />
-        {/* Above the scrim, deliberately. Underneath it these were being
-            washed out by a veil reaching 0.748 over the text column - about
-            4% of their opacity survived, which is invisible. A mask fades
-            them out across that column instead, so they read clearly over the
-            sky without touching the contrast behind the words. */}
-        <div className="backdrop__wisps">
-          <span className="wisp wisp--a" />
-          <span className="wisp wisp--b" />
-          <span className="wisp wisp--c" />
-          <span className="wisp wisp--d" />
-        </div>
+        {/* Above the scrim, deliberately. Beneath it the veil reaches 0.748
+            over the text column, which left roughly 4% of their opacity
+            visible - i.e. nothing. The layer is masked back across that column
+            instead, so the clouds read over the sky without lifting the
+            contrast behind the words. */}
+        <SkyClouds />
       </div>
     )
   }

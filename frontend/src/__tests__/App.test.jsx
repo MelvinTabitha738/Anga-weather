@@ -139,6 +139,29 @@ describe('the landing design', () => {
     expect(screen.getByTestId('backdrop')).not.toHaveAttribute('data-effect', 'photo')
   })
 
+  it('drifts clouds across the sky, above the scrim', async () => {
+    global.fetch = stubFetch()
+    const { container } = render(<App />)
+    await screen.findByTestId('backdrop')
+
+    const layer = screen.getByTestId('sky-clouds')
+    expect(layer).toBeInTheDocument()
+    expect(layer.children).toHaveLength(5)
+
+    // Every cloud must be animated; a static one is just a smudge.
+    for (const cloud of layer.children) {
+      expect(cloud.className).toMatch(/cloud-(slow|medium|fast)/)
+      expect(cloud.style.animationDelay).toBeTruthy()
+    }
+
+    // Order matters: beneath the scrim the veil reaches 0.748 over the text
+    // column and leaves about 4% of their opacity visible, i.e. nothing.
+    const kids = [...container.querySelectorAll('.backdrop > *')]
+    const scrim = kids.findIndex((n) => n.className.includes('photo-scrim'))
+    const cloudsAt = kids.findIndex((n) => n.className.includes('cloud-layer'))
+    expect(cloudsAt).toBeGreaterThan(scrim)
+  })
+
   it('asks what the weather is, not what to wear', async () => {
     global.fetch = stubFetch()
     render(<App />)

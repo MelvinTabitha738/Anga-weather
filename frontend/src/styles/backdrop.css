@@ -49,123 +49,6 @@
   to   { transform: scale(1.16) translate3d(4%, 0, 0); }
 }
 
-/* Cloud drifting across the sky.
- *
- * This is what actually reads as "the clouds are moving". Panning the whole
- * photograph moves the mountains with it, which is noticeable and faintly
- * seasick; soft masses crossing the upper frame read as cloud passing in front
- * of cloud, which is how a sky actually behaves.
- *
- * Each mass does two things at once: it travels horizontally, and it billows -
- * a slow, offset scale and vertical rise. Pure horizontal translation reads as
- * a slide; real cloud swells as it goes. The two cycles have deliberately
- * unrelated durations so they never resynchronise into a visible loop.
- *
- * Weight is the whole game here. Strong enough to be seen if you look, soft
- * enough to ignore while reading - a background that pulls the eye is a
- * background doing its job badly.
- */
-.backdrop__wisps {
-  overflow: hidden;
-  /* Sitting above the scrim, these would lift the background behind the
-     headline and eat into its contrast. The mask fades them out across the
-     text column and lets them run at full strength over the sky, which is
-     where the photograph's own clouds are anyway. */
-  -webkit-mask-image: linear-gradient(
-    100deg,
-    transparent 0%,
-    rgba(0, 0, 0, 0.15) 26%,
-    rgba(0, 0, 0, 0.75) 48%,
-    #000 66%,
-    #000 100%
-  );
-  mask-image: linear-gradient(
-    100deg,
-    transparent 0%,
-    rgba(0, 0, 0, 0.15) 26%,
-    rgba(0, 0, 0, 0.75) 48%,
-    #000 66%,
-    #000 100%
-  );
-}
-
-.wisp {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(
-    ellipse at 42% 46%,
-    rgba(255, 240, 220, 0.62) 0%,
-    rgba(255, 228, 200, 0.3) 38%,
-    rgba(255, 220, 190, 0.1) 62%,
-    transparent 76%
-  );
-  filter: blur(38px);
-  /* Promote to its own layer so the blur is rasterised once and only the
-     transform runs per frame; blurring on every frame is what makes this kind
-     of effect stutter. */
-  will-change: transform;
-  backface-visibility: hidden;
-  transform: translateZ(0);
-}
-
-.wisp--a {
-  width: 58vw;
-  height: 24vh;
-  top: 5%;
-  left: -66vw;
-  opacity: 0.3;
-  animation: wisp-cross 96s linear infinite;
-}
-
-.wisp--b {
-  width: 76vw;
-  height: 30vh;
-  top: 21%;
-  left: -84vw;
-  opacity: 0.24;
-  animation: wisp-cross 138s linear infinite;
-  animation-delay: -46s;
-}
-
-.wisp--c {
-  width: 48vw;
-  height: 20vh;
-  top: 37%;
-  left: -56vw;
-  opacity: 0.2;
-  animation: wisp-cross 74s linear infinite;
-  animation-delay: -28s;
-}
-
-/* A fourth, half a period behind the first. Three masses left gaps where
-   nothing was crossing and the sky briefly looked static; four overlap enough
-   that there is always something in motion. */
-.wisp--d {
-  width: 64vw;
-  height: 26vh;
-  top: 12%;
-  left: -72vw;
-  opacity: 0.22;
-  animation: wisp-cross 112s linear infinite;
-  animation-delay: -67s;
-}
-
-/* Strictly linear and one-directional.
- *
- * Constant velocity is what makes this read as drift. The previous version
- * paired it with a scale that eased in and out on a 21-34s cycle, which is a
- * pulse, not a movement - the eye reads throbbing rather than travel.
- *
- * Depth now comes from the masses differing in size, height and speed, which
- * is how parallax actually works, rather than from each one deforming.
- *
- * Every wisp is fully off-screen at both ends of its travel, so the loop back
- * to the start is never visible. */
-@keyframes wisp-cross {
-  from { transform: translate3d(0, 0, 0); }
-  to   { transform: translate3d(190vw, 0, 0); }
-}
-
 /* The photograph's veil.
  *
  * Two layers, because one uniform wash cannot do both jobs. The text column
@@ -211,16 +94,6 @@
   }
 
   .backdrop__photo { background-position: 62% 38%; }
-
-  /* Portrait puts words over the whole frame, so the wisps fade vertically
-     instead of horizontally. */
-  .backdrop__wisps {
-    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 34%, transparent 62%);
-    mask-image: linear-gradient(to bottom, #000 0%, #000 34%, transparent 62%);
-  }
-
-  /* Two wisps are plenty on a phone, and cheaper. */
-  .wisp--c { display: none; }
 }
 
 /* --- Sky ---------------------------------------------------------------- */
@@ -462,8 +335,7 @@
   }
 
   /* Hold the photograph still, but keep the scale so framing is unchanged. */
-  .backdrop__photo,
-  .wisp {
+  .backdrop__photo {
     animation: none !important;
   }
 

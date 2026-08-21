@@ -790,32 +790,26 @@ and three feature panels — over a **photograph of Mount Kenya at dusk**.
 it, which is noticeable and faintly seasick. Instead the photograph barely shifts (64s, no
 scale change, so the land stays put) while three soft masses cross the upper frame.
 
-Smoothness comes from two decisions that took a wrong turn first:
+Five soft, blurred ovals drift across the sky at three speeds (28s, 42s, 65s), staggered by
+negative animation delays so the sky is already mid-motion on first paint rather than
+starting empty and filling up. Pure CSS, looping infinitely — `styles/clouds.css` and
+`SkyClouds.jsx`.
 
-**Constant velocity.** The masses cross on a strictly `linear`, one-directional timing
-(74–138s). An earlier version paired that with a scale easing in and out on a 21–34s cycle
-— which is a *pulse*, not a movement, and the eye reads throbbing rather than travel. Depth
-now comes from the masses differing in size, height and speed, which is how parallax
-actually works, rather than from each one deforming.
+Two things had to be right, and both were wrong in an earlier attempt:
 
-**Actually perceptible.** The photograph pans horizontally at a constant scale — zooming is
-what made an earlier attempt feel seasick, a level pan does not, so the travel can be much
-wider. At ±4% over 78s it moves about **3.4 px/second** on a 1440px frame, against 0.9 px/s
-before, which was slow enough to read as a still image. The scaled frame overhangs by 115px
-each side and the travel is 67px, so no edge is ever exposed. `ease-in-out` decelerates
-smoothly into the turn, where `linear` would reverse at full speed.
+**Speed.** These travel at 66–96 px/second on a 1440px frame. A previous version ran at
+20–37 px/s, which is slow enough to read as a still image no matter how carefully the
+easing is tuned.
 
-**Above the scrim, not under it.** The drifting masses were originally drawn beneath the
-veil — which reaches 0.748 over the text column, leaving roughly 4% of their opacity
-visible, i.e. nothing. They now render above it, with a mask that fades them out across
-that column so they read clearly over the sky without lifting the contrast behind the
-words. In portrait, where the words span the frame, the mask fades vertically instead.
+**Layer order.** They render *above* the scrim. Beneath it the veil reaches 0.748 over the
+text column, leaving roughly 4% of their opacity visible — nothing. The layer is masked
+back across that column instead, so the clouds read over the sky without lifting the
+contrast behind the headline. In portrait, where the words span the frame, the mask fades
+vertically.
 
-Four masses rather than three, because three left gaps where nothing was crossing and the
-sky briefly looked static. Each is fully off-screen at both ends of its travel, so the loop
-back to the start is never visible. Blurred layers are promoted with `will-change` and
-`translateZ(0)` so the blur is rasterised once and only the transform runs per frame —
-re-blurring every frame is what makes this kind of effect stutter.
+The photograph beneath pans horizontally at a constant scale (±4%, 78s, ~3.4 px/s). Zooming
+is what made an earlier attempt feel seasick; a level pan does not, so the travel can be
+wider. It overhangs 115px each side against 67px of travel, so no edge is ever exposed.
 
 Weight is the rest of it: strong enough to notice if you look, soft enough to ignore while
 reading. All of it stops under `prefers-reduced-motion`.
@@ -1195,11 +1189,11 @@ Full documentation with defaults is in [`backend/.env.example`](backend/.env.exa
 
 ## Testing
 
-**218 tests.** 98 backend, 120 frontend.
+**219 tests.** 98 backend, 121 frontend.
 
 ```bash
 cd backend && python manage.py test        # 98 tests
-cd frontend && npm test                    # 120 tests
+cd frontend && npm test                    # 121 tests
 ```
 
 Coverage is concentrated on the engineering behaviour rather than spread thin:
