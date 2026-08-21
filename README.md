@@ -1498,34 +1498,38 @@ degradation are all in place and tested, and the product on top of them is compl
 current conditions, a 24-hour outlook, a 7-day forecast, weather-reactive visuals and
 honest freshness reporting.
 
-What follows is deliberately short. These are the four things that would genuinely matter
-next, and none of them is a small change.
+What follows is deliberately short. These four are absent for reasons of scope and
+timeline rather than oversight — each is a piece of work in its own right, and each was
+weighed against finishing what is here properly.
 
 **Stale-while-revalidate with a demand-driven refresher.** Today a request arriving after
 the TTL lapses waits on the upstream call. It should get the stale entry immediately while
 a background worker refreshes it, so nobody ever waits on Weather-AI. Pair that with
 refreshing only locations that are actually being asked for, and the quota is spent on
-demand rather than on whoever happens to arrive first. This needs a task queue and a
-scheduler, and it changes the failure model: a refresh that fails must not evict what it
-was replacing.
+demand rather than on whoever happens to arrive first. It needs a task queue and a
+scheduler, and it changes the failure model — a refresh that fails must not evict what it
+was replacing — so it was out of scope for this timeline.
 
 **Async request handling.** A coalescing follower currently blocks a worker thread while it
 waits for the leader — bounded at 12 seconds, fine at this scale, and the clearest
 structural ceiling in the system. Async views would let one worker hold hundreds of waiting
-followers. It is not a drop-in change: the cache client, the HTTP client and the
-single-flight wait would all have to become genuinely non-blocking.
+followers. It is not a drop-in change — the cache client, the HTTP client and the
+single-flight wait would all have to become non-blocking together — which put it beyond
+what this timeline allowed.
 
 **Correct behaviour when Redis itself is down.** `quota.py` currently fails *open* — if the
 cache is unreachable it allows upstream calls rather than blocking them. That is the wrong
 default against a monthly quota: an outage in the component that protects the budget
 becomes an outage that drains it. Doing better means a local fallback that survives losing
-shared state without either stampeding upstream or refusing all traffic.
+shared state without either stampeding upstream or refusing all traffic; that is a design
+question of its own, and it was left for a version with room to test it properly.
 
 **Load testing the coalescing guarantee continuously.** The single-flight property is
 verified once, by a test with 25 threads. It is the claim the whole design rests on, and it
 is exactly the kind of property that silently regresses — a stray `cache.get` in place of
 `cache.add`, a lock TTL that drifts under the upstream latency. It deserves a sustained,
-scheduled load test asserting the upstream call count, not a single unit test.
+scheduled load test asserting the upstream call count, which needs CI infrastructure this
+timeline did not extend to.
 
 ---
 
