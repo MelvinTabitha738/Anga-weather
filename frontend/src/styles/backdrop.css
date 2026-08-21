@@ -33,19 +33,20 @@
   /* Held at a constant scale. Zooming makes the mountains breathe, which the
      eye reads as the whole frame lurching. Only the position drifts, and only
      slightly - the sky does the moving, the land stays put. */
-  transform: scale(1.1) translate3d(-1.6%, 0.5%, 0);
-  /* 110s, not 64s. This is a bounded drift, so it has to turn around at each
-     end - and the longer the period, the lower the velocity and the less that
-     turn reads as a stop. ease-in-out is right here for the same reason:
-     linear would reverse at full speed, which is a visible jerk. */
-  animation: sky-drift 110s ease-in-out infinite alternate;
+  transform: scale(1.16) translate3d(-4%, 0, 0);
+  /* Horizontal only, at a constant scale. Zooming is what made an earlier
+     attempt feel seasick; a level pan does not, so the travel can be much
+     wider. At +/-4% over 78s this moves roughly 1.5px per second on a 1440px
+     frame - slow, but plainly moving, where the previous +/-1.6% over 110s
+     worked out at 0.7px/s and read as a still image. */
+  animation: sky-drift 78s ease-in-out infinite alternate;
   will-change: transform;
   backface-visibility: hidden;
 }
 
 @keyframes sky-drift {
-  from { transform: scale(1.1) translate3d(-1.6%, 0.5%, 0); }
-  to   { transform: scale(1.1) translate3d(1.6%, -0.5%, 0); }
+  from { transform: scale(1.16) translate3d(-4%, 0, 0); }
+  to   { transform: scale(1.16) translate3d(4%, 0, 0); }
 }
 
 /* Cloud drifting across the sky.
@@ -66,6 +67,26 @@
  */
 .backdrop__wisps {
   overflow: hidden;
+  /* Sitting above the scrim, these would lift the background behind the
+     headline and eat into its contrast. The mask fades them out across the
+     text column and lets them run at full strength over the sky, which is
+     where the photograph's own clouds are anyway. */
+  -webkit-mask-image: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.15) 26%,
+    rgba(0, 0, 0, 0.75) 48%,
+    #000 66%,
+    #000 100%
+  );
+  mask-image: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.15) 26%,
+    rgba(0, 0, 0, 0.75) 48%,
+    #000 66%,
+    #000 100%
+  );
 }
 
 .wisp {
@@ -92,7 +113,7 @@
   height: 24vh;
   top: 5%;
   left: -66vw;
-  opacity: 0.17;
+  opacity: 0.3;
   animation: wisp-cross 96s linear infinite;
 }
 
@@ -101,7 +122,7 @@
   height: 30vh;
   top: 21%;
   left: -84vw;
-  opacity: 0.13;
+  opacity: 0.24;
   animation: wisp-cross 138s linear infinite;
   animation-delay: -46s;
 }
@@ -111,7 +132,7 @@
   height: 20vh;
   top: 37%;
   left: -56vw;
-  opacity: 0.1;
+  opacity: 0.2;
   animation: wisp-cross 74s linear infinite;
   animation-delay: -28s;
 }
@@ -124,7 +145,7 @@
   height: 26vh;
   top: 12%;
   left: -72vw;
-  opacity: 0.11;
+  opacity: 0.22;
   animation: wisp-cross 112s linear infinite;
   animation-delay: -67s;
 }
@@ -190,6 +211,13 @@
   }
 
   .backdrop__photo { background-position: 62% 38%; }
+
+  /* Portrait puts words over the whole frame, so the wisps fade vertically
+     instead of horizontally. */
+  .backdrop__wisps {
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 34%, transparent 62%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 34%, transparent 62%);
+  }
 
   /* Two wisps are plenty on a phone, and cheaper. */
   .wisp--c { display: none; }

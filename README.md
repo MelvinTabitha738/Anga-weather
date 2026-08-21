@@ -798,10 +798,18 @@ Smoothness comes from two decisions that took a wrong turn first:
 now comes from the masses differing in size, height and speed, which is how parallax
 actually works, rather than from each one deforming.
 
-**No visible turn.** The photograph itself is a bounded drift, so it has to reverse at each
-end; at 64s that reversal read as a stop. At 110s the velocity is low enough that it does
-not, and `ease-in-out` decelerates smoothly into the turn where `linear` would reverse at
-full speed.
+**Actually perceptible.** The photograph pans horizontally at a constant scale — zooming is
+what made an earlier attempt feel seasick, a level pan does not, so the travel can be much
+wider. At ±4% over 78s it moves about **3.4 px/second** on a 1440px frame, against 0.9 px/s
+before, which was slow enough to read as a still image. The scaled frame overhangs by 115px
+each side and the travel is 67px, so no edge is ever exposed. `ease-in-out` decelerates
+smoothly into the turn, where `linear` would reverse at full speed.
+
+**Above the scrim, not under it.** The drifting masses were originally drawn beneath the
+veil — which reaches 0.748 over the text column, leaving roughly 4% of their opacity
+visible, i.e. nothing. They now render above it, with a mask that fades them out across
+that column so they read clearly over the sky without lifting the contrast behind the
+words. In portrait, where the words span the frame, the mask fades vertically instead.
 
 Four masses rather than three, because three left gaps where nothing was crossing and the
 sky briefly looked static. Each is fully off-screen at both ends of its travel, so the loop
