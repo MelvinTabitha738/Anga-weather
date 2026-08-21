@@ -496,14 +496,15 @@ body {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 700;
-  /* Measured off the reference design: cap height 83px on a 1440px frame
-     against Playfair's 0.70 cap ratio gives 118.6px, i.e. 8.23vw, with
-     baselines 110px apart for a line-height of 0.928.
+  /* 7.5rem (120px), which is the reference size to within a pixel - measured
+     cap height 83px on a 1440px frame against Playfair's 0.70 cap ratio gives
+     118.6px.
      
-     The height term only guards genuinely short windows; at 20vh it stays out
-     of the way on any normal one, which earlier versions did not - a tight vh
-     factor was silently holding the type down. */
-  font-size: clamp(2.6rem, min(8.23vw, 20vh), 9.5rem);
+     The two other terms are guards, not the design. 14.5vw stops "Kenyan sky."
+     wrapping between about 769px and 830px wide, where 120px type would just
+     outrun the line; 20vh handles short windows. Above ~830px both step aside
+     and the flat 7.5rem applies. */
+  font-size: clamp(2.5rem, min(7.5rem, 14.5vw, 20vh), 7.5rem);
   line-height: 0.928;
   letter-spacing: -0.018em;
   display: flex;
