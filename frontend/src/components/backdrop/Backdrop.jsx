@@ -55,6 +55,7 @@ export default function Backdrop({ theme, photo = false }) {
           <span className="wisp wisp--a" />
           <span className="wisp wisp--b" />
           <span className="wisp wisp--c" />
+          <span className="wisp wisp--d" />
         </div>
         <div className="backdrop__photo-scrim" />
       </div>

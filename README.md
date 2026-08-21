@@ -790,14 +790,26 @@ and three feature panels — over a **photograph of Mount Kenya at dusk**.
 it, which is noticeable and faintly seasick. Instead the photograph barely shifts (64s, no
 scale change, so the land stays put) while three soft masses cross the upper frame.
 
-Each mass does two things at once: it travels horizontally *and* billows — a slow, offset
-scale and rise. Pure horizontal translation reads as a slide; real cloud swells as it
-goes. The two cycles have deliberately unrelated durations (68–118s crossing against
-21–34s billowing) so they never resynchronise into a visible loop. The billow uses the
-independent `scale` property rather than `transform`, so it composes with the crossing
-motion instead of overwriting it.
+Smoothness comes from two decisions that took a wrong turn first:
 
-Weight is the whole game: strong enough to notice if you look, soft enough to ignore while
+**Constant velocity.** The masses cross on a strictly `linear`, one-directional timing
+(74–138s). An earlier version paired that with a scale easing in and out on a 21–34s cycle
+— which is a *pulse*, not a movement, and the eye reads throbbing rather than travel. Depth
+now comes from the masses differing in size, height and speed, which is how parallax
+actually works, rather than from each one deforming.
+
+**No visible turn.** The photograph itself is a bounded drift, so it has to reverse at each
+end; at 64s that reversal read as a stop. At 110s the velocity is low enough that it does
+not, and `ease-in-out` decelerates smoothly into the turn where `linear` would reverse at
+full speed.
+
+Four masses rather than three, because three left gaps where nothing was crossing and the
+sky briefly looked static. Each is fully off-screen at both ends of its travel, so the loop
+back to the start is never visible. Blurred layers are promoted with `will-change` and
+`translateZ(0)` so the blur is rasterised once and only the transform runs per frame —
+re-blurring every frame is what makes this kind of effect stutter.
+
+Weight is the rest of it: strong enough to notice if you look, soft enough to ignore while
 reading. All of it stops under `prefers-reduced-motion`.
 
 **The design's live-weather card is deliberately absent.** Showing a reading before anyone

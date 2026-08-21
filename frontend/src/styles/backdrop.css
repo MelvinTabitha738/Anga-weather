@@ -34,8 +34,13 @@
      eye reads as the whole frame lurching. Only the position drifts, and only
      slightly - the sky does the moving, the land stays put. */
   transform: scale(1.1) translate3d(-1.6%, 0.5%, 0);
-  animation: sky-drift 64s ease-in-out infinite alternate;
+  /* 110s, not 64s. This is a bounded drift, so it has to turn around at each
+     end - and the longer the period, the lower the velocity and the less that
+     turn reads as a stop. ease-in-out is right here for the same reason:
+     linear would reverse at full speed, which is a visible jerk. */
+  animation: sky-drift 110s ease-in-out infinite alternate;
   will-change: transform;
+  backface-visibility: hidden;
 }
 
 @keyframes sky-drift {
@@ -74,48 +79,70 @@
     transparent 76%
   );
   filter: blur(38px);
+  /* Promote to its own layer so the blur is rasterised once and only the
+     transform runs per frame; blurring on every frame is what makes this kind
+     of effect stutter. */
   will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 .wisp--a {
   width: 58vw;
-  height: 22vh;
-  top: 6%;
+  height: 24vh;
+  top: 5%;
   left: -66vw;
   opacity: 0.17;
-  animation: wisp-cross 82s linear infinite, wisp-billow 27s ease-in-out infinite alternate;
+  animation: wisp-cross 96s linear infinite;
 }
 
 .wisp--b {
-  width: 74vw;
-  height: 28vh;
-  top: 24%;
-  left: -82vw;
+  width: 76vw;
+  height: 30vh;
+  top: 21%;
+  left: -84vw;
   opacity: 0.13;
-  animation: wisp-cross 118s linear infinite, wisp-billow 34s ease-in-out infinite alternate;
-  animation-delay: -41s, -12s;
+  animation: wisp-cross 138s linear infinite;
+  animation-delay: -46s;
 }
 
 .wisp--c {
-  width: 46vw;
-  height: 18vh;
-  top: 43%;
-  left: -54vw;
+  width: 48vw;
+  height: 20vh;
+  top: 37%;
+  left: -56vw;
   opacity: 0.1;
-  animation: wisp-cross 68s linear infinite, wisp-billow 21s ease-in-out infinite alternate;
-  animation-delay: -25s, -7s;
+  animation: wisp-cross 74s linear infinite;
+  animation-delay: -28s;
 }
 
+/* A fourth, half a period behind the first. Three masses left gaps where
+   nothing was crossing and the sky briefly looked static; four overlap enough
+   that there is always something in motion. */
+.wisp--d {
+  width: 64vw;
+  height: 26vh;
+  top: 12%;
+  left: -72vw;
+  opacity: 0.11;
+  animation: wisp-cross 112s linear infinite;
+  animation-delay: -67s;
+}
+
+/* Strictly linear and one-directional.
+ *
+ * Constant velocity is what makes this read as drift. The previous version
+ * paired it with a scale that eased in and out on a 21-34s cycle, which is a
+ * pulse, not a movement - the eye reads throbbing rather than travel.
+ *
+ * Depth now comes from the masses differing in size, height and speed, which
+ * is how parallax actually works, rather than from each one deforming.
+ *
+ * Every wisp is fully off-screen at both ends of its travel, so the loop back
+ * to the start is never visible. */
 @keyframes wisp-cross {
   from { transform: translate3d(0, 0, 0); }
   to   { transform: translate3d(190vw, 0, 0); }
-}
-
-/* Applied to a wrapper so it composes with the crossing motion rather than
-   overwriting it. */
-@keyframes wisp-billow {
-  from { scale: 1 0.92; }
-  to   { scale: 1.12 1.08; }
 }
 
 /* The photograph's veil.
